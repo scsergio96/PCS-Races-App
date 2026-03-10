@@ -208,3 +208,7 @@ __marimo__/
 
 #IDEA
 /.idea
+
+# Claude
+CLAUDE.md
+/.claude
