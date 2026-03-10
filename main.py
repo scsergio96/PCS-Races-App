@@ -18,6 +18,7 @@ def get_races(
     race_level: Optional[int] = Query(default=None, ge=1, le=4, description="Livello gara (1-4)"),
     nation: Optional[str] = Query(default=None, description="Codice ISO, es. 'IT', 'FR'"),
     max_pages_per_year: int = Query(default=3, ge=1, le=10),
+    include_stages: bool = Query(default=False, description="Includi dettagli tappe per gare a tappe"),
 ):
     if year_from > year_to:
         raise HTTPException(400, "year_from deve essere <= year_to")
@@ -30,6 +31,7 @@ def get_races(
         gender=gender,
         race_level=race_level,
         nation=nation,
+        include_stages=include_stages,
     )
 
 

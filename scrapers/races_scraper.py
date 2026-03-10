@@ -2,14 +2,27 @@ import time
 import random
 from datetime import date
 from procyclingstats.scraper import Scraper
+from procyclingstats.race_scraper import Race as PCSRace
+from procyclingstats.stage_scraper import Stage as PCSStage
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 today = date.today()
 
 # Mapping gender → category PCS
 GENDER_TO_CATEGORY = {"ME": "1", "WE": "2"}
+
+
+class StageInfo(BaseModel):
+    number: int
+    name: str
+    date: Optional[str] = None  # YYYY-MM-DD
+    stage_url: str
+    departure: Optional[str] = None
+    arrival: Optional[str] = None
+    distance: Optional[float] = None  # km
+    profile_icon: Optional[str] = None  # p1, p2, etc.
 
 
 class RaceModel(BaseModel):
@@ -23,17 +36,60 @@ class RaceModel(BaseModel):
     nation: Optional[str] = None
     startlist_url: Optional[str] = None
     is_future: bool = False
+    stages: Optional[List[StageInfo]] = None
+
+
+def fetch_race_stages(race_url: str, year: int) -> List[StageInfo]:
+    """
+    Per gare a tappe, recupera i dettagli di ogni tappa usando procyclingstats.
+    """
+    try:
+        # Costruisci URL completo
+        full_url = f"{race_url}/{year}" if not race_url.endswith(str(year)) else race_url
+
+        race = PCSRace(full_url)
+
+        # Se è una gara di un giorno, ritorna lista vuota
+        if race.is_one_day_race():
+            return []
+
+        # Recupera le tappe dalla pagina della gara
+        stages = race.stages("date", "stage_name", "stage_url")
+        result: List[StageInfo] = []
+
+        for i, stage in enumerate(stages, 1):
+            stage_info = StageInfo(
+                number=i,
+                name=stage.get("stage_name", ""),
+                stage_url=stage.get("stage_url", ""),
+            )
+
+            # Recupera dettagli aggiuntivi dalla pagina della tappa
+            try:
+                if stage.get("stage_url"):
+                    pcs_stage = PCSStage(stage["stage_url"])
+                    stage_info.date = pcs_stage.date()
+                    stage_info.departure = pcs_stage.departure()
+                    stage_info.arrival = pcs_stage.arrival()
+                    stage_info.distance = pcs_stage.distance()
+                    stage_info.profile_icon = pcs_stage.profile_icon()
+            except Exception:
+                # Se il dettaglio fallisce, usiamo i dati base
+                stage_info.date = stage.get("date")  # MM-DD format
+
+            result.append(stage_info)
+            time.sleep(random.uniform(0.3, 0.6))  # rate limiting
+
+        return result
+    except Exception as e:
+        print(f"[WARN] Errore nel recupero tappe per {race_url}: {e}")
+        return []
 
 
 class RacesList(Scraper):
     def races(self) -> list[dict]:
 
         soup = BeautifulSoup(self.html.html, "html.parser")
-
-        # DEBUG — stampa tutte le table trovate
-        tables = soup.find_all("table")
-#
-
         table = soup.find("table", class_="basic")
         if not table:
             return []
@@ -46,7 +102,7 @@ class RacesList(Scraper):
         rows = []
         for tr in table.find_all("tr")[1:]:
             cells = tr.find_all("td")
-            if not cells or len(cells) < 4:
+            if not cells or len(cells) < 3:
                 continue
 
             row: dict = {}
@@ -61,9 +117,9 @@ class RacesList(Scraper):
                 row["start_date"] = date_text or None
                 row["end_date"] = None
 
-            # col 1 → Nation + Name + race_url
+            # col 1 → Nation (da flag span) + Name + race_url
             nation = None
-            flag_span = cells[1].find("span")
+            flag_span = cells[1].find("span", class_="flag")
             if flag_span:
                 classes = flag_span.get("class", [])
                 iso_codes = [c for c in classes if c != "flag"]
@@ -71,17 +127,17 @@ class RacesList(Scraper):
             row["nation"] = nation
 
             link = cells[1].find("a")
-            row["name"] = cells[1].get_text(strip=True)
+            row["name"] = link.get_text(strip=True) if link else cells[1].get_text(strip=True)
             if link and link.get("href"):
                 row["race_url"] = link["href"].lstrip("/")
 
             # col 2 → UCI Class
             row["uci_class"] = cells[2].get_text(strip=True) or None
 
-            # col 3 → Gender
-            row["gender"] = cells[3].get_text(strip=True) or None
+            # col 3 → Gender (opzionale)
+            row["gender"] = cells[3].get_text(strip=True) if len(cells) > 3 else None
 
-            # col 4 → Startlist URL
+            # col 4 → Startlist URL (opzionale)
             if len(cells) > 4:
                 sl_link = cells[4].find("a")
                 row["startlist_url"] = (
@@ -121,13 +177,11 @@ def _build_race_model(raw: dict, year: int) -> RaceModel:
         startlist_url=raw.get("startlist_url"),
         is_future=is_future,
     )
-#TODO conviene usare soltanto l'api calendar-plus-filters anche per le gare future e applicare i filtri necessari per mostrare soltanto le gare da domani in poi
-#TODO gestire le gare a tappe per avere i link a tutte le tappe all'interno della risposta. gara a tappe se end_date != null
+
 
 def _build_url(
     year: int,
     offset: int,
-    only_future: Optional[bool],
     month: Optional[int],
     gender: Optional[str],
     race_level: Optional[int],
@@ -135,34 +189,19 @@ def _build_url(
 ) -> str:
     category = GENDER_TO_CATEGORY.get(gender.upper(), "") if gender else ""
 
-    if only_future is True:
-        # Gare future → races.php?s=upcoming-races
-        url = (
-            f"races.php"
-            f"?s=upcoming-races"
-            f"&season={year}"
-            f"&month={month if month else ''}"
-            f"&category={category}"
-            f"&racelevel={race_level if race_level is not None else ''}"
-            f"&racenation={nation.lower() if nation else ''}"
-            f"&class="
-            f"&filter=Filter"
-            f"&offset={offset}"
-        )
-    else:
-        # Calendario completo (passate + future) → races.php?s=calendar-plus-filters
-        url = (
-            f"races.php"
-            f"?s=calendar-plus-filters"
-            f"&season={year}"
-            f"&month={month if month else ''}"
-            f"&category={category}"
-            f"&racelevel={race_level if race_level is not None else ''}"
-            f"&racenation={nation.lower() if nation else ''}"
-            f"&class="
-            f"&filter=Filter"
-            f"&offset={offset}"
-        )
+    # Usiamo sempre calendar-plus-filters per tutte le richieste
+    url = (
+        f"races.php"
+        f"?s=calendar-plus-filters"
+        f"&season={year}"
+        f"&month={month if month else ''}"
+        f"&category={category}"
+        f"&racelevel={race_level if race_level is not None else ''}"
+        f"&racenation={nation.lower() if nation else ''}"
+        f"&class="
+        f"&filter=Filter"
+        f"&offset={offset}"
+    )
 
     return url
 
@@ -178,6 +217,7 @@ def fetch_races(
     gender: Optional[str] = None,
     race_level: Optional[int] = None,
     nation: Optional[str] = None,
+    include_stages: bool = False,
 ) -> list[RaceModel]:
     all_races: list[RaceModel] = []
     page_size = 100
@@ -185,7 +225,7 @@ def fetch_races(
     for year in years:
         for page_num in range(max_pages_per_year):
             offset = page_num * page_size
-            url = _build_url(year, offset, only_future, month, gender, race_level, nation)
+            url = _build_url(year, offset, month, gender, race_level, nation)
             print(url)
             try:
                 scraper = RacesList(url)
@@ -206,8 +246,16 @@ def fetch_races(
 
         time.sleep(random.uniform(0.8, 1.5))
 
-    # only_future=False → filtro lato Python (PCS non ha param dedicato)
-    if only_future is False:
+    # Filtro only_future lato Python (PCS non ha param dedicato)
+    if only_future is True:
+        all_races = [r for r in all_races if r.is_future]
+    elif only_future is False:
         all_races = [r for r in all_races if not r.is_future]
+
+    # Aggiungi dettagli tappe se richiesto
+    if include_stages:
+        for race in all_races:
+            if race.end_date is not None:  # È una gara a tappe
+                race.stages = fetch_race_stages(race.race_url, race.year)
 
     return all_races

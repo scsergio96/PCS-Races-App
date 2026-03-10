@@ -1,5 +1,16 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
+
+
+class StageInfo(BaseModel):
+    number: int
+    name: str
+    date: Optional[str] = None  # YYYY-MM-DD
+    stage_url: str
+    departure: Optional[str] = None
+    arrival: Optional[str] = None
+    distance: Optional[float] = None  # km
+    profile_icon: Optional[str] = None  # p1, p2, etc.
 
 
 class RaceModel(BaseModel):
@@ -13,3 +24,4 @@ class RaceModel(BaseModel):
     nation: Optional[str] = None
     startlist_url: Optional[str] = None
     is_future: bool = False
+    stages: Optional[List[StageInfo]] = None
