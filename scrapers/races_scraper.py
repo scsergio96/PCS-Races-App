@@ -3,7 +3,7 @@ import random
 from datetime import date
 from procyclingstats.scraper import Scraper
 from procyclingstats.race_scraper import Race as PCSRace
-from procyclingstats.stage_scraper import Stage as PCSStage
+from procyclingstats.race_startlist_scraper import RaceStartlist as PCSRaceStartlist
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 from typing import Optional, List
@@ -14,16 +14,9 @@ today = date.today()
 GENDER_TO_CATEGORY = {"ME": "1", "WE": "2"}
 
 
-class StageInfo(BaseModel):
-    number: int
-    name: str
-    date: Optional[str] = None  # YYYY-MM-DD
-    stage_url: str
-    departure: Optional[str] = None
-    arrival: Optional[str] = None
-    distance: Optional[float] = None  # km
-    profile_icon: Optional[str] = None  # p1, p2, etc.
-
+# ---------------------------------------------------------------------------
+# Models: race list
+# ---------------------------------------------------------------------------
 
 class RaceModel(BaseModel):
     name: str
@@ -34,70 +27,61 @@ class RaceModel(BaseModel):
     uci_class: Optional[str] = None
     gender: Optional[str] = None
     nation: Optional[str] = None
-    startlist_url: Optional[str] = None
     is_future: bool = False
-    stages: Optional[List[StageInfo]] = None
 
 
-def fetch_race_stages(race_url: str, year: int) -> List[StageInfo]:
-    """
-    Per gare a tappe, recupera i dettagli di ogni tappa usando procyclingstats.
-    """
-    try:
-        # Costruisci URL completo
-        full_url = f"{race_url}/{year}" if not race_url.endswith(str(year)) else race_url
+# ---------------------------------------------------------------------------
+# Models: race detail
+# ---------------------------------------------------------------------------
 
-        race = PCSRace(full_url)
+class StageDetail(BaseModel):
+    stage_name: str
+    stage_url: str
+    date: Optional[str] = None       # MM-DD
+    profile_icon: Optional[str] = None
 
-        # Se è una gara di un giorno, ritorna lista vuota
-        if race.is_one_day_race():
-            return []
 
-        # Recupera le tappe dalla pagina della gara
-        stages = race.stages("date", "stage_name", "stage_url")
-        result: List[StageInfo] = []
+class StageWinner(BaseModel):
+    stage_name: str
+    rider_name: str
+    rider_url: str
+    nationality: Optional[str] = None
 
-        for i, stage in enumerate(stages, 1):
-            stage_info = StageInfo(
-                number=i,
-                name=stage.get("stage_name", ""),
-                stage_url=stage.get("stage_url", ""),
-            )
 
-            # Recupera dettagli aggiuntivi dalla pagina della tappa
-            try:
-                if stage.get("stage_url"):
-                    pcs_stage = PCSStage(stage["stage_url"])
-                    stage_info.date = pcs_stage.date()
-                    stage_info.departure = pcs_stage.departure()
-                    stage_info.arrival = pcs_stage.arrival()
-                    stage_info.distance = pcs_stage.distance()
-                    stage_info.profile_icon = pcs_stage.profile_icon()
-            except Exception:
-                # Se il dettaglio fallisce, usiamo i dati base
-                stage_info.date = stage.get("date")  # MM-DD format
+class StartlistEntry(BaseModel):
+    rider_name: str
+    rider_url: str
+    team_name: Optional[str] = None
+    team_url: Optional[str] = None
+    nationality: Optional[str] = None
+    rider_number: Optional[int] = None
 
-            result.append(stage_info)
-            time.sleep(random.uniform(0.3, 0.6))  # rate limiting
 
-        return result
-    except Exception as e:
-        print(f"[WARN] Errore nel recupero tappe per {race_url}: {e}")
-        return []
+class RaceDetailModel(BaseModel):
+    name: str
+    year: int
+    nationality: Optional[str] = None
+    edition: Optional[int] = None
+    startdate: Optional[str] = None
+    enddate: Optional[str] = None
+    category: Optional[str] = None
+    uci_tour: Optional[str] = None
+    is_one_day_race: bool
+    stages: Optional[List[StageDetail]] = None          # solo gare a tappe
+    stages_winners: Optional[List[StageWinner]] = None  # se include_stages_winners=true
+    startlist: Optional[List[StartlistEntry]] = None    # se include_startlist=true
 
+
+# ---------------------------------------------------------------------------
+# Race list scraper
+# ---------------------------------------------------------------------------
 
 class RacesList(Scraper):
     def races(self) -> list[dict]:
-
         soup = BeautifulSoup(self.html.html, "html.parser")
         table = soup.find("table", class_="basic")
         if not table:
             return []
-
-        # soup = BeautifulSoup(self.html.html, "html.parser")
-        # table = soup.find("table", class_="basic")
-        # if not table:
-        #     return []
 
         rows = []
         for tr in table.find_all("tr")[1:]:
@@ -137,22 +121,15 @@ class RacesList(Scraper):
             # col 3 → Gender (opzionale)
             row["gender"] = cells[3].get_text(strip=True) if len(cells) > 3 else None
 
-            # col 4 → Startlist URL (opzionale)
-            if len(cells) > 4:
-                sl_link = cells[4].find("a")
-                row["startlist_url"] = (
-                    sl_link["href"].lstrip("/")
-                    if sl_link and sl_link.get("href")
-                    else None
-                )
-            else:
-                row["startlist_url"] = None
-
             if row.get("name"):
                 rows.append(row)
 
         return rows
 
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 def _build_race_model(raw: dict, year: int) -> RaceModel:
     start_str = raw.get("start_date") or ""
@@ -174,7 +151,6 @@ def _build_race_model(raw: dict, year: int) -> RaceModel:
         uci_class=raw.get("uci_class"),
         gender=raw.get("gender"),
         nation=raw.get("nation"),
-        startlist_url=raw.get("startlist_url"),
         is_future=is_future,
     )
 
@@ -189,8 +165,7 @@ def _build_url(
 ) -> str:
     category = GENDER_TO_CATEGORY.get(gender.upper(), "") if gender else ""
 
-    # Usiamo sempre calendar-plus-filters per tutte le richieste
-    url = (
+    return (
         f"races.php"
         f"?s=calendar-plus-filters"
         f"&season={year}"
@@ -203,11 +178,10 @@ def _build_url(
         f"&offset={offset}"
     )
 
-    return url
 
-
-
-
+# ---------------------------------------------------------------------------
+# Public fetch functions
+# ---------------------------------------------------------------------------
 
 def fetch_races(
     years: list[int],
@@ -217,7 +191,6 @@ def fetch_races(
     gender: Optional[str] = None,
     race_level: Optional[int] = None,
     nation: Optional[str] = None,
-    include_stages: bool = False,
 ) -> list[RaceModel]:
     all_races: list[RaceModel] = []
     page_size = 100
@@ -226,7 +199,6 @@ def fetch_races(
         for page_num in range(max_pages_per_year):
             offset = page_num * page_size
             url = _build_url(year, offset, month, gender, race_level, nation)
-            print(url)
             try:
                 scraper = RacesList(url)
                 rows = scraper.races()
@@ -246,16 +218,95 @@ def fetch_races(
 
         time.sleep(random.uniform(0.8, 1.5))
 
-    # Filtro only_future lato Python (PCS non ha param dedicato)
     if only_future is True:
         all_races = [r for r in all_races if r.is_future]
     elif only_future is False:
         all_races = [r for r in all_races if not r.is_future]
 
-    # Aggiungi dettagli tappe se richiesto
-    if include_stages:
-        for race in all_races:
-            if race.end_date is not None:  # È una gara a tappe
-                race.stages = fetch_race_stages(race.race_url, race.year)
-
     return all_races
+
+
+def fetch_race_detail(
+    race_url: str,
+    include_startlist: bool = False,
+    include_stages_winners: bool = False,
+) -> RaceDetailModel:
+    race = PCSRace(race_url)
+
+    def _safe(fn):
+        try:
+            return fn()
+        except Exception:
+            return None
+
+    is_one_day = _safe(race.is_one_day_race) or False
+
+    # Stages list (sempre recuperata per gare a tappe)
+    stages: Optional[List[StageDetail]] = None
+    if not is_one_day:
+        try:
+            raw_stages = race.stages("date", "profile_icon", "stage_name", "stage_url")
+            stages = [
+                StageDetail(
+                    stage_name=s.get("stage_name", ""),
+                    stage_url=s.get("stage_url", ""),
+                    date=s.get("date"),
+                    profile_icon=s.get("profile_icon"),
+                )
+                for s in raw_stages
+            ]
+        except Exception as e:
+            print(f"[WARN] stages fetch failed for {race_url}: {e}")
+
+    # Stages winners (opzionale)
+    stages_winners: Optional[List[StageWinner]] = None
+    if include_stages_winners and not is_one_day:
+        try:
+            raw_winners = race.stages_winners("stage_name", "rider_name", "rider_url", "nationality")
+            stages_winners = [
+                StageWinner(
+                    stage_name=w.get("stage_name", ""),
+                    rider_name=w.get("rider_name", ""),
+                    rider_url=w.get("rider_url", ""),
+                    nationality=w.get("nationality"),
+                )
+                for w in raw_winners
+            ]
+        except Exception as e:
+            print(f"[WARN] stages_winners fetch failed for {race_url}: {e}")
+
+    # Startlist (opzionale)
+    startlist: Optional[List[StartlistEntry]] = None
+    if include_startlist:
+        try:
+            startlist_url = race_url.rstrip("/") + "/startlist"
+            pcs_startlist = PCSRaceStartlist(startlist_url)
+            raw_startlist = pcs_startlist.startlist()
+            startlist = [
+                StartlistEntry(
+                    rider_name=r.get("rider_name", ""),
+                    rider_url=r.get("rider_url", ""),
+                    team_name=r.get("team_name"),
+                    team_url=r.get("team_url"),
+                    nationality=r.get("nationality"),
+                    rider_number=r.get("rider_number"),
+                )
+                for r in raw_startlist
+            ]
+        except Exception as e:
+            print(f"[WARN] startlist fetch failed for {race_url}: {e}")
+
+    return RaceDetailModel(
+        name=_safe(race.name) or "",
+        year=_safe(race.year) or 0,
+        nationality=_safe(race.nationality),
+        edition=_safe(race.edition),
+        startdate=_safe(race.startdate),
+        enddate=_safe(race.enddate),
+        category=_safe(race.category),
+        uci_tour=_safe(race.uci_tour),
+        is_one_day_race=is_one_day,
+        stages=stages,
+        stages_winners=stages_winners,
+        startlist=startlist,
+    )
