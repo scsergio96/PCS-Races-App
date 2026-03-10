@@ -2,7 +2,7 @@ from fastapi import FastAPI, Query, HTTPException
 from datetime import date
 from typing import Optional
 
-from scrapers.races_scraper import fetch_races, RaceModel
+from scrapers.races_scraper import fetch_races, fetch_race_detail, RaceModel, RaceDetailModel
 
 CURRENT_YEAR = date.today().year
 app = FastAPI(title="ProcyclingStats Races API")
@@ -18,7 +18,6 @@ def get_races(
     race_level: Optional[int] = Query(default=None, ge=1, le=4, description="Livello gara (1-4)"),
     nation: Optional[str] = Query(default=None, description="Codice ISO, es. 'IT', 'FR'"),
     max_pages_per_year: int = Query(default=3, ge=1, le=10),
-    include_stages: bool = Query(default=False, description="Includi dettagli tappe per gare a tappe"),
 ):
     if year_from > year_to:
         raise HTTPException(400, "year_from deve essere <= year_to")
@@ -31,8 +30,23 @@ def get_races(
         gender=gender,
         race_level=race_level,
         nation=nation,
-        include_stages=include_stages,
     )
+
+
+@app.get("/race/{race_url:path}", response_model=RaceDetailModel)
+def get_race_detail(
+    race_url: str,
+    include_startlist: bool = Query(default=False, description="Includi startlist della gara"),
+    include_stages_winners: bool = Query(default=False, description="Includi vincitori di tappa (solo gare a tappe)"),
+):
+    try:
+        return fetch_race_detail(
+            race_url=race_url,
+            include_startlist=include_startlist,
+            include_stages_winners=include_stages_winners,
+        )
+    except Exception as e:
+        raise HTTPException(500, f"Errore nel recupero della gara: {e}")
 
 
 @app.get("/health")
