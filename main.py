@@ -1,8 +1,14 @@
 from fastapi import FastAPI, Query, HTTPException
 from datetime import date
 from typing import Optional
+import requests
 
+from procyclingstats.scraper import Scraper
 from scrapers.races_scraper import fetch_races, fetch_race_detail, RaceModel, RaceDetailModel
+
+_session = requests.Session()
+_session.headers.update({**Scraper.DEFAULT_HEADERS, "Accept-Encoding": "gzip, deflate"})
+Scraper._session = _session
 
 CURRENT_YEAR = date.today().year
 app = FastAPI(title="ProcyclingStats Races API")
