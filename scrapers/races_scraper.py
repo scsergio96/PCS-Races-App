@@ -199,6 +199,7 @@ def fetch_races(
         for page_num in range(max_pages_per_year):
             offset = page_num * page_size
             url = _build_url(year, offset, month, gender, race_level, nation)
+            print(url)
             try:
                 scraper = RacesList(url)
                 rows = scraper.races()
