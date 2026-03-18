@@ -247,7 +247,7 @@ fastApiExample/
 - `DELETE /diary/{id}` — delete review and associated mentions
 
 **Memories and Suggestions (authenticated):**
-- `GET /diary/memories/{race_base_slug}` — reviews of same race from previous years
+- `GET /memories/{race_base_slug:path}` — reviews of same race from previous years
 - `GET /diary/{id}/suggestions` — contextual suggestions for a review (entities mentioned elsewhere)
 - `GET /mentions/entity/{entity_slug}` — all user's reviews mentioning an entity
 
