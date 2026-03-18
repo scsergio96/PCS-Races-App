@@ -316,9 +316,9 @@ Commenti (4)
 app/
 ├── community/
 │   └── page.tsx              # Global community feed
-├── races/
-│   └── [raceUrl]/
-│       └── page.tsx          # Race detail (now 4 tabs: Info/Memories/Community/Startlist)
+├── race/
+│   └── [...slug]/
+│       └── page.tsx          # Race detail (catch-all for stage URLs; 4 tabs: Info/Memories/Community/Startlist)
 ├── diary/
 │   └── [id]/
 │       └── page.tsx          # Review detail (now includes comment thread if is_public)
