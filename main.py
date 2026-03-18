@@ -6,6 +6,7 @@ import requests
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from procyclingstats.scraper import Scraper
+from routers.community import router as community_router
 from routers.races import router as races_router
 from routers.diary import router as diary_router
 from routers.comments import router as comments_router
@@ -42,6 +43,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="CycleTracker API", lifespan=lifespan)
+app.include_router(community_router)
 app.include_router(races_router)
 app.include_router(diary_router)
 app.include_router(comments_router)
