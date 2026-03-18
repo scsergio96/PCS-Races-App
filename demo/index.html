@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CycleTracker - Demo</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #242836;
+    --accent: #FFD700;
+    --accent-dim: rgba(255,215,0,0.15);
+    --text: #e8e8ed;
+    --text2: #8b8fa3;
+    --green: #34d399;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --orange: #fb923c;
+    --radius: 12px;
+    --max-w: 430px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+  }
+  .phone-frame {
+    width: 100%;
+    max-width: var(--max-w);
+    min-height: 100vh;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--surface2);
+    border-right: 1px solid var(--surface2);
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+  }
+
+  /* Header */
+  .header {
+    padding: 0 16px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header h1 .logo { color: var(--accent); }
+  .header-actions { display:flex; gap:12px; }
+  .header-btn {
+    background: var(--surface);
+    border: none;
+    color: var(--text);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Content */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px 100px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--max-w);
+    background: var(--surface);
+    border-top: 1px solid var(--surface2);
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+    z-index: 100;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-size: 10px;
+    cursor: pointer;
+    padding: 4px 16px;
+    transition: color 0.2s;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-item .nav-icon { font-size: 22px; }
+
+  /* Screen management */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ===== RACES SCREEN ===== */
+  .filters-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 8px 0 16px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .filters-row::-webkit-scrollbar { display:none; }
+  .filter-chip {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: var(--surface);
+    border: 1px solid var(--surface2);
+    color: var(--text2);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .filter-chip.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Race card */
+  .race-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.2s;
+    border: 1px solid transparent;
+  }
+  .race-card:active { transform: scale(0.98); }
+  .race-card:hover { border-color: var(--surface2); }
+  .race-card .rc-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+  }
+  .race-card .rc-date {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .race-card .rc-class {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .rc-class.wt { background: rgba(255,215,0,0.15); color: var(--accent); }
+  .rc-class.pro { background: rgba(96,165,250,0.15); color: var(--blue); }
+  .rc-class.one { background: rgba(251,146,60,0.15); color: var(--orange); }
+  .race-card .rc-name {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .race-card .rc-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .rc-flag { font-size: 16px; }
+  .rc-diary-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(52,211,153,0.15);
+    color: var(--green);
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: auto;
+  }
+  .future-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(96,165,250,0.15);
+    color: var(--blue);
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: auto;
+  }
+
+  /* Month separator */
+  .month-sep {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 20px 0 10px;
+  }
+
+  /* ===== RACE DETAIL SCREEN ===== */
+  .detail-header {
+    position: relative;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    margin: 0 -16px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .detail-back {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: var(--text);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    margin-bottom: 12px;
+  }
+  .detail-header h2 { font-size: 24px; margin-bottom: 8px; }
+  .detail-info {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .detail-info span { display:flex; align-items:center; gap:4px; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--surface2);
+  }
+  .tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* Memory card */
+  .memory-card {
+    background: linear-gradient(135deg, rgba(255,215,0,0.08) 0%, rgba(255,215,0,0.02) 100%);
+    border: 1px solid rgba(255,215,0,0.2);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .memory-card .mc-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .memory-card .mc-year { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .memory-card .mc-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .memory-card .mc-rating { margin-top: 8px; color: var(--accent); font-size: 14px; }
+
+  /* Stages list */
+  .stage-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--surface2);
+    font-size: 13px;
+  }
+  .stage-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .stage-info { flex:1; }
+  .stage-route { color: var(--text2); font-size: 12px; }
+  .stage-profile { font-size: 16px; }
+
+  /* CTA button */
+  .cta-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    margin: 16px 0;
+    transition: transform 0.15s;
+  }
+  .cta-btn:active { transform: scale(0.97); }
+  .cta-btn.secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--surface2);
+  }
+
+  /* ===== DIARY SCREEN ===== */
+  .diary-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+  }
+  .diary-card .dc-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .diary-card .dc-race {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .diary-card .dc-rating { color: var(--accent); font-size: 14px; }
+  .diary-card .dc-date { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+  .diary-card .dc-excerpt {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .rider-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .rider-chip {
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: var(--surface2);
+    font-size: 11px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* ===== EDITOR SCREEN ===== */
+  .editor-screen .detail-header { margin-bottom: 0; }
+  .editor-container {
+    background: var(--surface);
+    border-radius: var(--radius);
+    margin: 16px 0;
+    overflow: hidden;
+  }
+  .editor-toolbar {
+    display: flex;
+    gap: 2px;
+    padding: 8px;
+    border-bottom: 1px solid var(--surface2);
+  }
+  .editor-toolbar button {
+    background: none;
+    border: none;
+    color: var(--text2);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .editor-toolbar button:hover { background: var(--surface2); }
+  .editor-body {
+    padding: 14px;
+    min-height: 150px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+  .editor-body .mention {
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .editor-body .typing-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 16px;
+    background: var(--accent);
+    animation: blink 1s infinite;
+    vertical-align: text-bottom;
+  }
+  @keyframes blink { 0%,50% { opacity:1 } 51%,100% { opacity:0 } }
+
+  /* Structured fields */
+  .structured-fields {
+    padding: 16px 0;
+  }
+  .sf-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .sf-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--surface2);
+  }
+  .sf-label { font-size: 13px; color: var(--text2); }
+  .sf-value { font-size: 13px; font-weight: 600; }
+  .stars { color: var(--accent); letter-spacing: 2px; }
+
+  /* Detected riders */
+  .detected-section {
+    margin-top: 16px;
+    padding: 14px;
+    background: var(--surface);
+    border-radius: var(--radius);
+  }
+  .detected-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text2);
+    margin-bottom: 10px;
+  }
+  .detected-rider {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--surface2);
+  }
+  .detected-rider:last-child { border: none; }
+  .dr-info { display:flex; align-items:center; gap:10px; }
+  .dr-conf {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .dr-conf.high { background: rgba(52,211,153,0.15); color: var(--green); }
+  .dr-conf.medium { background: rgba(251,146,60,0.15); color: var(--orange); }
+
+  /* Suggestion card */
+  .suggestion-card {
+    background: linear-gradient(135deg, rgba(96,165,250,0.08) 0%, rgba(96,165,250,0.02) 100%);
+    border: 1px solid rgba(96,165,250,0.2);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-top: 12px;
+  }
+  .suggestion-card .sc-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--blue);
+    margin-bottom: 6px;
+  }
+  .suggestion-card .sc-text {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+    font-style: italic;
+  }
+  .suggestion-card .sc-source {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 6px;
+    font-style: normal;
+  }
+
+  /* ===== RIDER VIEW ===== */
+  .rider-header {
+    text-align: center;
+    padding: 20px 0;
+  }
+  .rider-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 12px;
+  }
+  .rider-stats {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 12px;
+  }
+  .rider-stat {
+    text-align: center;
+  }
+  .rider-stat .rs-num { font-size: 20px; font-weight: 700; color: var(--accent); }
+  .rider-stat .rs-label { font-size: 11px; color: var(--text2); }
+
+  /* Mention in rider view */
+  .mention-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .mention-card .mn-race { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .mention-card .mn-date { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+  .mention-card .mn-excerpt {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+    font-style: italic;
+    border-left: 3px solid var(--accent);
+    padding-left: 10px;
+  }
+
+  /* ===== CALENDAR SCREEN ===== */
+  .feed-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .feed-card .fc-name { font-weight: 600; margin-bottom: 4px; }
+  .feed-card .fc-filters { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+  .feed-url {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text2);
+    font-family: monospace;
+  }
+  .copy-btn {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* Section title */
+  .section-title {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 20px 0 12px;
+  }
+
+  /* Toast notification */
+  .toast {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--green);
+    color: var(--bg);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 200;
+    display: none;
+    animation: toastIn 0.3s ease;
+  }
+  @keyframes toastIn { from { opacity:0; transform: translateX(-50%) translateY(-10px); } }
+
+  /* Autocomplete dropdown */
+  .autocomplete {
+    position: absolute;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    z-index: 50;
+    width: 220px;
+    margin-top: 4px;
+  }
+  .autocomplete-item {
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .autocomplete-item:hover { background: var(--surface); }
+  .autocomplete-item .ai-flag { font-size: 14px; }
+  .ac-hidden { display: none; }
+
+  /* Animations */
+  .fade-in { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+<div class="phone-frame">
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span>9:41</span>
+    <span>CycleTracker Demo</span>
+    <span>100%</span>
+  </div>
+
+  <!-- ===== SCREEN: RACES ===== -->
+  <div class="screen active" id="screen-races">
+    <div class="header">
+      <h1><span class="logo">&#9776;</span> Calendario</h1>
+      <div class="header-actions">
+        <button class="header-btn">&#128269;</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="filters-row">
+        <button class="filter-chip active">2026</button>
+        <button class="filter-chip">Uomini</button>
+        <button class="filter-chip">WorldTour</button>
+        <button class="filter-chip">Italia</button>
+        <button class="filter-chip">Francia</button>
+        <button class="filter-chip">Belgio</button>
+      </div>
+
+      <div class="month-sep">Marzo 2026</div>
+
+      <div class="race-card" onclick="showDetail('msr')">
+        <div class="rc-top">
+          <span class="rc-date">21 Mar</span>
+          <span class="rc-class wt">WorldTour</span>
+        </div>
+        <div class="rc-name">Milano-Sanremo</div>
+        <div class="rc-meta">
+          <span class="rc-flag">&#127470;&#127481;</span>
+          <span>1.UWT</span>
+          <span>Uomini Elite</span>
+          <span class="rc-diary-badge">&#9998; Recensito</span>
+        </div>
+      </div>
+
+      <div class="race-card" onclick="showDetail('gent')">
+        <div class="rc-top">
+          <span class="rc-date">29 Mar</span>
+          <span class="rc-class wt">WorldTour</span>
+        </div>
+        <div class="rc-name">Gent-Wevelgem</div>
+        <div class="rc-meta">
+          <span class="rc-flag">&#127463;&#127466;</span>
+          <span>1.UWT</span>
+          <span>Uomini Elite</span>
+          <span class="future-badge">&#128197; Tra 12 giorni</span>
+        </div>
+      </div>
+
+      <div class="month-sep">Aprile 2026</div>
+
+      <div class="race-card" onclick="showDetail('fiandre')">
+        <div class="rc-top">
+          <span class="rc-date">05 Apr</span>
+          <span class="rc-class wt">WorldTour</span>
+        </div>
+        <div class="rc-name">Giro delle Fiandre</div>
+        <div class="rc-meta">
+          <span class="rc-flag">&#127463;&#127466;</span>
+          <span>1.UWT</span>
+          <span>Uomini Elite</span>
+          <span class="future-badge">&#128197; Tra 19 giorni</span>
+        </div>
+      </div>
+
+      <div class="race-card" onclick="showDetail('roubaix')">
+        <div class="rc-top">
+          <span class="rc-date">12 Apr</span>
+          <span class="rc-class wt">WorldTour</span>
+        </div>
+        <div class="rc-name">Paris-Roubaix</div>
+        <div class="rc-meta">
+          <span class="rc-flag">&#127467;&#127479;</span>
+          <span>1.UWT</span>
+          <span>Uomini Elite</span>
+          <span class="future-badge">&#128197; Tra 26 giorni</span>
+        </div>
+      </div>
+
+      <div class="race-card">
+        <div class="rc-top">
+          <span class="rc-date">19 Apr</span>
+          <span class="rc-class one">Monumento</span>
+        </div>
+        <div class="rc-name">Amstel Gold Race</div>
+        <div class="rc-meta">
+          <span class="rc-flag">&#127475;&#127473;</span>
+          <span>1.UWT</span>
+          <span>Uomini Elite</span>
+        </div>
+      </div>
+
+      <div class="race-card">
+        <div class="rc-top">
+          <span class="rc-date">22 Apr</span>
+          <span class="rc-class pro">Pro Series</span>
+        </div>
+        <div class="rc-name">Freccia Vallone</div>
+        <div class="rc-meta">
+          <span class="rc-flag">&#127463;&#127466;</span>
+          <span>1.Pro</span>
+          <span>Uomini Elite</span>
+        </div>
+      </div>
+
+      <div class="race-card">
+        <div class="rc-top">
+          <span class="rc-date">26 Apr</span>
+          <span class="rc-class wt">WorldTour</span>
+        </div>
+        <div class="rc-name">Liegi-Bastogne-Liegi</div>
+        <div class="rc-meta">
+          <span class="rc-flag">&#127463;&#127466;</span>
+          <span>1.UWT</span>
+          <span>Uomini Elite</span>
+        </div>
+      </div>
+
+      <div class="month-sep">Maggio 2026</div>
+
+      <div class="race-card" onclick="showDetail('giro')">
+        <div class="rc-top">
+          <span class="rc-date">09 Mag - 31 Mag</span>
+          <span class="rc-class wt">WorldTour</span>
+        </div>
+        <div class="rc-name">Giro d'Italia</div>
+        <div class="rc-meta">
+          <span class="rc-flag">&#127470;&#127481;</span>
+          <span>2.UWT</span>
+          <span>Uomini Elite</span>
+          <span class="future-badge">&#128197; Tra 53 giorni</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: RACE DETAIL ===== -->
+  <div class="screen" id="screen-detail">
+    <div class="content">
+      <div class="detail-header fade-in">
+        <button class="detail-back" onclick="goBack()">&larr;</button>
+        <h2 id="detail-race-name">Milano-Sanremo</h2>
+        <div class="detail-info">
+          <span>&#127470;&#127481; Italia</span>
+          <span>&#128197; 21 Mar 2026</span>
+          <span>&#127942; WorldTour</span>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab(this, 'detail-info-tab')">Info</button>
+        <button class="tab" onclick="switchTab(this, 'detail-ricordi-tab')">Ricordi</button>
+        <button class="tab" onclick="switchTab(this, 'detail-startlist-tab')">Startlist</button>
+      </div>
+
+      <div id="detail-info-tab">
+        <div class="stage-row">
+          <div class="stage-num">1</div>
+          <div class="stage-info">
+            <div>Milano &rarr; Sanremo</div>
+            <div class="stage-route">294 km &middot; In linea</div>
+          </div>
+          <div class="stage-profile">&#9968;</div>
+        </div>
+
+        <button class="cta-btn" onclick="showScreen('screen-editor')">&#9998; Scrivi recensione</button>
+        <button class="cta-btn secondary" onclick="showToast('Evento aggiunto al calendario!')">&#128197; Aggiungi al calendario</button>
+      </div>
+
+      <div id="detail-ricordi-tab" style="display:none">
+        <div class="section-title">I tuoi ricordi</div>
+
+        <div class="memory-card fade-in">
+          <div class="mc-label">&#128161; Ricordo &middot; Milano-Sanremo</div>
+          <div class="mc-year">2025</div>
+          <div class="mc-text">Che finale incredibile! Pogacar ha attaccato sul Poggio come solo lui sa fare, ma Van der Poel lo ha rimontato negli ultimi 200 metri con una volata pazzesca. Uno dei finali piu' belli degli ultimi anni.</div>
+          <div class="mc-rating">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        </div>
+
+        <div class="memory-card fade-in">
+          <div class="mc-label">&#128161; Ricordo &middot; Milano-Sanremo</div>
+          <div class="mc-year">2024</div>
+          <div class="mc-text">Gara noiosa fino agli ultimi 30km. Pogacar ha provato ad andare via sulla Cipressa ma il gruppo lo ha ripreso. Alla fine volata ristretta, ha vinto Philipsen.</div>
+          <div class="mc-rating">&#9733;&#9733;&#9733;&#9734;&#9734;</div>
+        </div>
+      </div>
+
+      <div id="detail-startlist-tab" style="display:none">
+        <div class="stage-row">
+          <div class="stage-num">1</div>
+          <div class="stage-info"><div>Tadej Pogacar</div><div class="stage-route">UAE Team Emirates &middot; &#127480;&#127470;</div></div>
+        </div>
+        <div class="stage-row">
+          <div class="stage-num">11</div>
+          <div class="stage-info"><div>Mathieu van der Poel</div><div class="stage-route">Alpecin-Deceuninck &middot; &#127475;&#127473;</div></div>
+        </div>
+        <div class="stage-row">
+          <div class="stage-num">21</div>
+          <div class="stage-info"><div>Wout van Aert</div><div class="stage-route">Visma-Lease a Bike &middot; &#127463;&#127466;</div></div>
+        </div>
+        <div class="stage-row">
+          <div class="stage-num">31</div>
+          <div class="stage-info"><div>Jasper Philipsen</div><div class="stage-route">Alpecin-Deceuninck &middot; &#127463;&#127466;</div></div>
+        </div>
+        <div class="stage-row">
+          <div class="stage-num">41</div>
+          <div class="stage-info"><div>Jonathan Milan</div><div class="stage-route">Lidl-Trek &middot; &#127470;&#127481;</div></div>
+        </div>
+        <div class="stage-row">
+          <div class="stage-num">51</div>
+          <div class="stage-info"><div>Biniam Girmay</div><div class="stage-route">Intermarche-Wanty &middot; &#127466;&#127479;</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: EDITOR ===== -->
+  <div class="screen" id="screen-editor">
+    <div class="content">
+      <div class="detail-header fade-in editor-screen">
+        <button class="detail-back" onclick="showScreen('screen-detail')">&larr;</button>
+        <h2>Milano-Sanremo 2026</h2>
+        <div class="detail-info">
+          <span>Nuova recensione</span>
+        </div>
+      </div>
+
+      <div class="editor-container fade-in">
+        <div class="editor-toolbar">
+          <button><b>B</b></button>
+          <button><i>I</i></button>
+          <button>&#9776;</button>
+          <button style="color:var(--accent)">@</button>
+        </div>
+        <div class="editor-body">
+          Finale straordinario! <span class="mention">@Pogacar</span> ha fatto il suo classico scatto sul Poggio, questa volta con una potenza devastante. <span class="mention">@Van der Poel</span> ha provato a seguirlo ma si e' staccato a 500 metri dalla cima. Dietro, <span class="mention">@Van Aert</span> ha chiuso il gap in discesa ma non e' bastato.<span class="typing-cursor"></span>
+        </div>
+      </div>
+
+      <div class="structured-fields fade-in">
+        <div class="sf-title">&#9881; Dettagli (opzionali)</div>
+        <div class="sf-row">
+          <span class="sf-label">Voto</span>
+          <span class="sf-value stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+        </div>
+        <div class="sf-row">
+          <span class="sf-label">Momento chiave</span>
+          <span class="sf-value">Scatto sul Poggio a -3km</span>
+        </div>
+        <div class="sf-row">
+          <span class="sf-label">Protagonista</span>
+          <span class="sf-value">Tadej Pogacar</span>
+        </div>
+        <div class="sf-row">
+          <span class="sf-label">Emozione</span>
+          <span class="sf-value">&#129321; Entusiasmo</span>
+        </div>
+      </div>
+
+      <div class="detected-section fade-in">
+        <div class="detected-title">&#9889; Corridori rilevati automaticamente</div>
+        <div class="detected-rider">
+          <div class="dr-info">
+            <span>&#127480;&#127470;</span>
+            <span>Tadej Pogacar</span>
+          </div>
+          <span class="dr-conf high">98% &#10003;</span>
+        </div>
+        <div class="detected-rider">
+          <div class="dr-info">
+            <span>&#127475;&#127473;</span>
+            <span>Mathieu van der Poel</span>
+          </div>
+          <span class="dr-conf high">95% &#10003;</span>
+        </div>
+        <div class="detected-rider">
+          <div class="dr-info">
+            <span>&#127463;&#127466;</span>
+            <span>Wout van Aert</span>
+          </div>
+          <span class="dr-conf medium">87%</span>
+        </div>
+      </div>
+
+      <div class="suggestion-card fade-in">
+        <div class="sc-label">&#128161; Suggerimento &middot; Pogacar</div>
+        <div class="sc-text">"Pogacar ha attaccato sul Poggio come solo lui sa fare, ma Van der Poel lo ha rimontato..."</div>
+        <div class="sc-source">&#8212; Milano-Sanremo 2025 &middot; &#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      </div>
+
+      <div class="suggestion-card fade-in">
+        <div class="sc-label">&#128161; Suggerimento &middot; Van der Poel</div>
+        <div class="sc-text">"Van der Poel ha dimostrato ancora una volta di essere il piu' completo del gruppo. La sua rimonta sulla Cipressa e' stata da brividi."</div>
+        <div class="sc-source">&#8212; Giro delle Fiandre 2025 &middot; &#9733;&#9733;&#9733;&#9733;&#9734;</div>
+      </div>
+
+      <button class="cta-btn" onclick="showToast('Recensione salvata!'); setTimeout(()=>showScreen('screen-diary'), 800)">&#128190; Salva recensione</button>
+      <button class="cta-btn secondary" onclick="showToast('Link copiato!')">&#128279; Condividi</button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: DIARY ===== -->
+  <div class="screen" id="screen-diary">
+    <div class="header">
+      <h1><span class="logo">&#128214;</span> Il Mio Diario</h1>
+      <div class="header-actions">
+        <button class="header-btn">&#128269;</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="filters-row">
+        <button class="filter-chip active">Tutti</button>
+        <button class="filter-chip">2026</button>
+        <button class="filter-chip">2025</button>
+        <button class="filter-chip">&#9733; 5 stelle</button>
+      </div>
+
+      <div class="diary-card fade-in" onclick="showScreen('screen-editor')">
+        <div class="dc-top">
+          <span class="dc-race">&#127470;&#127481; Milano-Sanremo 2026</span>
+          <span class="dc-rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+        </div>
+        <div class="dc-date">21 Marzo 2026</div>
+        <div class="dc-excerpt">Finale straordinario! Pogacar ha fatto il suo classico scatto sul Poggio, questa volta con una potenza devastante. Van der Poel ha provato a seguirlo ma si e' staccato a 500 metri dalla cima...</div>
+        <div class="rider-chips">
+          <span class="rider-chip">&#127480;&#127470; Pogacar</span>
+          <span class="rider-chip">&#127475;&#127473; Van der Poel</span>
+          <span class="rider-chip">&#127463;&#127466; Van Aert</span>
+        </div>
+      </div>
+
+      <div class="diary-card fade-in">
+        <div class="dc-top">
+          <span class="dc-race">&#127470;&#127481; Milano-Sanremo 2025</span>
+          <span class="dc-rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+        </div>
+        <div class="dc-date">22 Marzo 2025</div>
+        <div class="dc-excerpt">Che finale incredibile! Pogacar ha attaccato sul Poggio come solo lui sa fare, ma Van der Poel lo ha rimontato negli ultimi 200 metri con una volata pazzesca...</div>
+        <div class="rider-chips">
+          <span class="rider-chip">&#127480;&#127470; Pogacar</span>
+          <span class="rider-chip">&#127475;&#127473; Van der Poel</span>
+        </div>
+      </div>
+
+      <div class="diary-card fade-in">
+        <div class="dc-top">
+          <span class="dc-race">&#127463;&#127466; Giro delle Fiandre 2025</span>
+          <span class="dc-rating">&#9733;&#9733;&#9733;&#9733;&#9734;</span>
+        </div>
+        <div class="dc-date">6 Aprile 2025</div>
+        <div class="dc-excerpt">Van der Poel ha dimostrato ancora una volta di essere il piu' completo del gruppo. La sua rimonta sulla Cipressa e' stata da brividi. Pedersen sorpresa del giorno.</div>
+        <div class="rider-chips">
+          <span class="rider-chip">&#127475;&#127473; Van der Poel</span>
+          <span class="rider-chip">&#127465;&#127472; Pedersen</span>
+        </div>
+      </div>
+
+      <div class="diary-card fade-in">
+        <div class="dc-top">
+          <span class="dc-race">&#127467;&#127479; Tour de France 2025</span>
+          <span class="dc-rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+        </div>
+        <div class="dc-date">5 - 27 Luglio 2025</div>
+        <div class="dc-excerpt">Un Tour dominato da Pogacar dall'inizio alla fine. Nessuno ha potuto contrastarlo in montagna. Vingegaard coraggioso ma non al livello dell'anno scorso dopo la caduta al Giro.</div>
+        <div class="rider-chips">
+          <span class="rider-chip">&#127480;&#127470; Pogacar</span>
+          <span class="rider-chip">&#127465;&#127472; Vingegaard</span>
+          <span class="rider-chip">&#127463;&#127466; Evenepoel</span>
+        </div>
+      </div>
+
+      <div class="diary-card fade-in">
+        <div class="dc-top">
+          <span class="dc-race">&#127470;&#127481; Giro d'Italia 2025</span>
+          <span class="dc-rating">&#9733;&#9733;&#9733;&#9733;&#9734;</span>
+        </div>
+        <div class="dc-date">10 Mag - 1 Giu 2025</div>
+        <div class="dc-excerpt">Giro combattuto, finalmente! Tiberi ha stupito tutti con la sua scalata sullo Stelvio. Incredibile come il ciclismo italiano stia rinascendo.</div>
+        <div class="rider-chips">
+          <span class="rider-chip">&#127470;&#127481; Tiberi</span>
+          <span class="rider-chip">&#127466;&#127468; Carapaz</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: RIDER VIEW ===== -->
+  <div class="screen" id="screen-rider">
+    <div class="content">
+      <div class="detail-header">
+        <button class="detail-back" onclick="goBack()">&larr;</button>
+      </div>
+      <div class="rider-header fade-in">
+        <div class="rider-avatar">&#127480;&#127470;</div>
+        <h2>Tadej Pogacar</h2>
+        <div style="color:var(--text2);font-size:13px;">UAE Team Emirates</div>
+        <div class="rider-stats">
+          <div class="rider-stat">
+            <div class="rs-num">4</div>
+            <div class="rs-label">Menzioni</div>
+          </div>
+          <div class="rider-stat">
+            <div class="rs-num">4.5</div>
+            <div class="rs-label">Voto medio gare</div>
+          </div>
+          <div class="rider-stat">
+            <div class="rs-num">&#129321;</div>
+            <div class="rs-label">Emozione top</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Le tue menzioni</div>
+
+      <div class="mention-card fade-in">
+        <div class="mn-race">&#127470;&#127481; Milano-Sanremo 2026</div>
+        <div class="mn-date">21 Marzo 2026 &middot; &#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="mn-excerpt">"<b>Pogacar</b> ha fatto il suo classico scatto sul Poggio, questa volta con una potenza devastante."</div>
+      </div>
+
+      <div class="mention-card fade-in">
+        <div class="mn-race">&#127470;&#127481; Milano-Sanremo 2025</div>
+        <div class="mn-date">22 Marzo 2025 &middot; &#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="mn-excerpt">"<b>Pogacar</b> ha attaccato sul Poggio come solo lui sa fare, ma Van der Poel lo ha rimontato negli ultimi 200 metri."</div>
+      </div>
+
+      <div class="mention-card fade-in">
+        <div class="mn-race">&#127467;&#127479; Tour de France 2025</div>
+        <div class="mn-date">5 - 27 Luglio 2025 &middot; &#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="mn-excerpt">"Un Tour dominato da <b>Pogacar</b> dall'inizio alla fine. Nessuno ha potuto contrastarlo in montagna."</div>
+      </div>
+
+      <div class="mention-card fade-in">
+        <div class="mn-race">&#127470;&#127481; Milano-Sanremo 2024</div>
+        <div class="mn-date">16 Marzo 2024 &middot; &#9733;&#9733;&#9733;&#9734;&#9734;</div>
+        <div class="mn-excerpt">"<b>Pogacar</b> ha provato ad andare via sulla Cipressa ma il gruppo lo ha ripreso."</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: CALENDAR ===== -->
+  <div class="screen" id="screen-calendar">
+    <div class="content">
+      <div class="detail-header">
+        <button class="detail-back" onclick="showScreen('screen-races')">&larr;</button>
+        <h2>I Miei Feed Calendario</h2>
+        <div class="detail-info">
+          <span>Abbonati da Google Calendar o Apple Calendar</span>
+        </div>
+      </div>
+
+      <div class="feed-card fade-in">
+        <div class="fc-name">&#128197; Gare WorldTour 2026</div>
+        <div class="fc-filters">Filtri: Anno 2026 &middot; WorldTour &middot; Uomini Elite</div>
+        <div class="feed-url">
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis">https://api.cycletracker.app/calendar/feed/a8f3...ics</span>
+          <button class="copy-btn" onclick="showToast('URL copiato!')">Copia</button>
+        </div>
+      </div>
+
+      <div class="feed-card fade-in">
+        <div class="fc-name">&#127470;&#127481; Gare Italiane</div>
+        <div class="fc-filters">Filtri: Anno 2026 &middot; Nazione: IT &middot; Tutti i livelli</div>
+        <div class="feed-url">
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis">https://api.cycletracker.app/calendar/feed/c4b7...ics</span>
+          <button class="copy-btn" onclick="showToast('URL copiato!')">Copia</button>
+        </div>
+      </div>
+
+      <button class="cta-btn" onclick="showToast('Apri i filtri per creare un nuovo feed')">+ Nuovo feed calendario</button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: PROFILE ===== -->
+  <div class="screen" id="screen-profile">
+    <div class="header">
+      <h1><span class="logo">&#128100;</span> Profilo</h1>
+    </div>
+    <div class="content">
+      <div class="rider-header fade-in">
+        <div class="rider-avatar">S</div>
+        <h2>Sergio</h2>
+        <div style="color:var(--text2);font-size:13px;">sergio@email.com</div>
+        <div class="rider-stats">
+          <div class="rider-stat">
+            <div class="rs-num">5</div>
+            <div class="rs-label">Recensioni</div>
+          </div>
+          <div class="rider-stat">
+            <div class="rs-num">4.4</div>
+            <div class="rs-label">Voto medio</div>
+          </div>
+          <div class="rider-stat">
+            <div class="rs-num">2</div>
+            <div class="rs-label">Feed attivi</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">I tuoi corridori piu' menzionati</div>
+      <div class="diary-card" onclick="showScreen('screen-rider')">
+        <div class="dc-top">
+          <span class="dc-race">&#127480;&#127470; Tadej Pogacar</span>
+          <span style="color:var(--text2);font-size:13px">4 menzioni</span>
+        </div>
+        <div class="dc-date">UAE Team Emirates</div>
+      </div>
+      <div class="diary-card">
+        <div class="dc-top">
+          <span class="dc-race">&#127475;&#127473; Mathieu van der Poel</span>
+          <span style="color:var(--text2);font-size:13px">3 menzioni</span>
+        </div>
+        <div class="dc-date">Alpecin-Deceuninck</div>
+      </div>
+      <div class="diary-card">
+        <div class="dc-top">
+          <span class="dc-race">&#127463;&#127466; Wout van Aert</span>
+          <span style="color:var(--text2);font-size:13px">1 menzione</span>
+        </div>
+        <div class="dc-date">Visma-Lease a Bike</div>
+      </div>
+
+      <div class="section-title">Impostazioni</div>
+      <div class="diary-card" onclick="showScreen('screen-calendar')">
+        <div class="dc-race">&#128197; I miei feed calendario</div>
+      </div>
+      <div class="diary-card">
+        <div class="dc-race">&#128274; Privacy e condivisione</div>
+      </div>
+      <div class="diary-card">
+        <div class="dc-race">&#128276; Notifiche</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <button class="nav-item active" id="nav-races" onclick="navigate('races')">
+      <span class="nav-icon">&#128197;</span>
+      <span>Calendario</span>
+    </button>
+    <button class="nav-item" id="nav-diary" onclick="navigate('diary')">
+      <span class="nav-icon">&#128214;</span>
+      <span>Diario</span>
+    </button>
+    <button class="nav-item" id="nav-profile" onclick="navigate('profile')">
+      <span class="nav-icon">&#128100;</span>
+      <span>Profilo</span>
+    </button>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+  let history = ['screen-races'];
+  let currentScreen = 'screen-races';
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (id !== currentScreen) {
+      history.push(id);
+    }
+    currentScreen = id;
+    // scroll to top
+    const content = document.getElementById(id).querySelector('.content');
+    if (content) content.scrollTop = 0;
+  }
+
+  function navigate(tab) {
+    const screenId = 'screen-' + tab;
+    showScreen(screenId);
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('nav-' + tab).classList.add('active');
+    history = [screenId];
+  }
+
+  function goBack() {
+    history.pop();
+    const prev = history[history.length - 1] || 'screen-races';
+    showScreen(prev);
+    // restore nav highlight
+    if (prev === 'screen-races') navigate('races');
+    else if (prev === 'screen-diary') navigate('diary');
+    else if (prev === 'screen-profile') navigate('profile');
+  }
+
+  function showDetail(race) {
+    const details = {
+      msr: { name: 'Milano-Sanremo', info: '<span>&#127470;&#127481; Italia</span><span>&#128197; 21 Mar 2026</span><span>&#127942; WorldTour</span>' },
+      gent: { name: 'Gent-Wevelgem', info: '<span>&#127463;&#127466; Belgio</span><span>&#128197; 29 Mar 2026</span><span>&#127942; WorldTour</span>' },
+      fiandre: { name: 'Giro delle Fiandre', info: '<span>&#127463;&#127466; Belgio</span><span>&#128197; 05 Apr 2026</span><span>&#127942; WorldTour</span>' },
+      roubaix: { name: 'Paris-Roubaix', info: '<span>&#127467;&#127479; Francia</span><span>&#128197; 12 Apr 2026</span><span>&#127942; WorldTour</span>' },
+      giro: { name: "Giro d'Italia", info: '<span>&#127470;&#127481; Italia</span><span>&#128197; 9 Mag - 31 Mag 2026</span><span>&#127942; WorldTour</span>' },
+    };
+    const d = details[race] || details.msr;
+    document.getElementById('detail-race-name').textContent = d.name;
+    document.querySelector('#screen-detail .detail-info').innerHTML = d.info;
+    // Reset tabs
+    document.querySelectorAll('#screen-detail .tab').forEach((t,i) => {
+      t.classList.toggle('active', i === 0);
+    });
+    document.getElementById('detail-info-tab').style.display = '';
+    document.getElementById('detail-ricordi-tab').style.display = 'none';
+    document.getElementById('detail-startlist-tab').style.display = 'none';
+    showScreen('screen-detail');
+  }
+
+  function switchTab(el, tabId) {
+    el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    ['detail-info-tab','detail-ricordi-tab','detail-startlist-tab'].forEach(id => {
+      document.getElementById(id).style.display = id === tabId ? '' : 'none';
+    });
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 2000);
+  }
+
+  // Filter chips toggle
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('active'));
+  });
+</script>
+</body>
+</html>
