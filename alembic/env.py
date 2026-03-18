@@ -11,7 +11,7 @@ from models.database import Base
 # Import all models so Alembic can detect them
 # These modules will be created in Tasks 3 and 4
 try:
-    from models import cache, user, diary  # noqa: F401
+    from models import cache, user, diary, community  # noqa: F401
 except ImportError:
     pass
 

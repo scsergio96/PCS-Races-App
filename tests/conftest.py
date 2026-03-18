@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy import text
 
 from models.database import Base
+from models.community import ReviewComment, ReviewLike, CommunityReport  # noqa: F401
 
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
