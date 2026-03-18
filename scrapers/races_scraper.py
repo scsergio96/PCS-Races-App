@@ -8,26 +8,12 @@ from bs4 import BeautifulSoup
 from pydantic import BaseModel
 from typing import Optional, List
 
+from models.race import RaceModel
+
 today = date.today()
 
 # Mapping gender → category PCS
 GENDER_TO_CATEGORY = {"ME": "1", "WE": "2"}
-
-
-# ---------------------------------------------------------------------------
-# Models: race list
-# ---------------------------------------------------------------------------
-
-class RaceModel(BaseModel):
-    name: str
-    race_url: str
-    year: int
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
-    uci_class: Optional[str] = None
-    gender: Optional[str] = None
-    nation: Optional[str] = None
-    is_future: bool = False
 
 
 # ---------------------------------------------------------------------------
