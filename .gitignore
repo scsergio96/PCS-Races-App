@@ -215,3 +215,5 @@ CLAUDE.md
 
 # Git worktrees
 .worktrees/
+.superpowers/brainstorm/
+.venv-wsl/
