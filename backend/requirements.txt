@@ -26,8 +26,8 @@ rapidfuzz>=3.6.0
 # Moderation
 better-profanity>=0.7.0
 
-# Calendar (deferred to Plan 2)
-# icalendar>=5.0.0
+# Calendar
+icalendar>=5.0.0
 
 # Testing
 pytest>=8.0.0

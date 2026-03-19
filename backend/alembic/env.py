@@ -12,7 +12,7 @@ from models.database import Base
 
 # Import all models so Alembic can detect them
 try:
-    from models import cache, user, diary, community  # noqa: F401
+    from models import cache, user, diary, community, watchlist, calendar  # noqa: F401
 except ImportError:
     pass
 
