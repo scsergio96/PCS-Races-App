@@ -14,7 +14,7 @@ from auth.middleware import require_auth
 router = APIRouter(prefix="/diary", tags=["diary"])
 
 
-class DiaryEntryCreate(BaseModel):
+class DiaryEntryCreate(CamelModel):
     race_url: str
     race_name: str
     race_year: int
@@ -29,7 +29,7 @@ class DiaryEntryCreate(BaseModel):
     stage_number: Optional[int] = None
 
 
-class DiaryEntryUpdate(BaseModel):
+class DiaryEntryUpdate(CamelModel):
     body: Optional[str] = None
     rating: Optional[int] = None
     key_moment: Optional[str] = None

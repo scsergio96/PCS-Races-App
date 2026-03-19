@@ -14,7 +14,7 @@ from models.watchlist import Watchlist
 router = APIRouter(prefix="/watchlist", tags=["watchlist"])
 
 
-class WatchlistCreate(BaseModel):
+class WatchlistCreate(CamelModel):
     race_url: str
     race_name: str
     race_date: Optional[date] = None
