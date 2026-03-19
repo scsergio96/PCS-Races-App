@@ -222,6 +222,8 @@ CLAUDE.md
 frontend/.next/
 frontend/node_modules/
 frontend/.env*.local
+# Unblock frontend source dirs that match Python packaging patterns above
+!frontend/lib/
 
 # Backend DB files (if run locally from backend/)
 backend/*.db
