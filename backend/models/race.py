@@ -1,8 +1,8 @@
-from pydantic import BaseModel
 from typing import Optional, List
+from models.base import CamelModel
 
 
-class StageInfo(BaseModel):
+class StageInfo(CamelModel):
     number: int
     name: str
     date: Optional[str] = None  # YYYY-MM-DD
@@ -13,7 +13,7 @@ class StageInfo(BaseModel):
     profile_icon: Optional[str] = None  # p1, p2, etc.
 
 
-class RaceModel(BaseModel):
+class RaceModel(CamelModel):
     name: str
     race_url: str
     year: int

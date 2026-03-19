@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, field_validator
+from models.base import CamelModel
 from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,7 +21,7 @@ class CommentCreate(BaseModel):
     body: str
 
 
-class CommentResponse(BaseModel):
+class CommentResponse(CamelModel):
     id: uuid.UUID
     diary_entry_id: uuid.UUID
     parent_id: uuid.UUID | None
@@ -29,8 +30,6 @@ class CommentResponse(BaseModel):
     is_removed: bool
     like_count: int
     created_at: datetime
-
-    model_config = {"from_attributes": True}
 
     @field_validator("created_at", mode="before")
     @classmethod

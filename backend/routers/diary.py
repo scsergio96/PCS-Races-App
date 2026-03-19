@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from models.base import CamelModel
 from typing import Optional
 from sqlalchemy import select, delete as sql_delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +14,7 @@ from auth.middleware import require_auth
 router = APIRouter(prefix="/diary", tags=["diary"])
 
 
-class DiaryEntryCreate(BaseModel):
+class DiaryEntryCreate(CamelModel):
     race_url: str
     race_name: str
     race_year: int
@@ -28,7 +29,7 @@ class DiaryEntryCreate(BaseModel):
     stage_number: Optional[int] = None
 
 
-class DiaryEntryUpdate(BaseModel):
+class DiaryEntryUpdate(CamelModel):
     body: Optional[str] = None
     rating: Optional[int] = None
     key_moment: Optional[str] = None
@@ -39,8 +40,9 @@ class DiaryEntryUpdate(BaseModel):
     stage_number: Optional[int] = None
 
 
-class DiaryEntryResponse(BaseModel):
+class DiaryEntryResponse(CamelModel):
     id: uuid.UUID
+    user_id: uuid.UUID
     race_url: str
     race_name: str
     race_year: int
@@ -54,9 +56,10 @@ class DiaryEntryResponse(BaseModel):
     share_token: Optional[uuid.UUID]
     is_stage: bool
     stage_number: Optional[int]
+    like_count: int = 0
+    comment_count: int = 0
     created_at: datetime
-
-    model_config = {"from_attributes": True}
+    updated_at: Optional[datetime] = None
 
 
 @router.get("", response_model=list[DiaryEntryResponse])
@@ -308,7 +311,7 @@ async def confirm_mention(
 share_router = APIRouter(prefix="/share", tags=["share"])
 
 
-class PublicEntryResponse(BaseModel):
+class PublicEntryResponse(CamelModel):
     race_name: str
     race_year: int
     race_url: str
@@ -317,7 +320,6 @@ class PublicEntryResponse(BaseModel):
     key_moment: Optional[str]
     protagonist: Optional[str]
     dominant_emotion: Optional[str]
-    model_config = {"from_attributes": True}
 
 
 @share_router.get("/{share_token}", response_model=PublicEntryResponse)

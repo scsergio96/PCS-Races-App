@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
+from models.base import CamelModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,13 +22,12 @@ class CalendarFilterCreate(BaseModel):
     filter_params: dict[str, Any] = {}
 
 
-class CalendarFilterResponse(BaseModel):
+class CalendarFilterResponse(CamelModel):
     id: uuid.UUID
     label: str
     subscription_token: uuid.UUID
     filter_params: dict[str, Any]
     created_at: datetime
-    model_config = {"from_attributes": True}
 
 
 @router.get("/filters", response_model=list[CalendarFilterResponse])
