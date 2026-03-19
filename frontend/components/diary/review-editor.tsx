@@ -52,7 +52,7 @@ export function ReviewEditor({ raceUrl, raceName, existing }: ReviewEditorProps)
             return {
               onStart: (props: {
                 clientRect?: (() => DOMRect | null) | null;
-                command: (attrs: Record<string, unknown>) => void;
+                command: (attrs: { id: string; label: string }) => void;
                 items: string[];
               }) => {
                 element = document.createElement("ul");
@@ -77,7 +77,7 @@ export function ReviewEditor({ raceUrl, raceName, existing }: ReviewEditorProps)
               },
               onUpdate: (props: {
                 items: string[];
-                command: (attrs: Record<string, unknown>) => void;
+                command: (attrs: { id: string; label: string }) => void;
               }) => {
                 if (!element) return;
                 element.innerHTML = "";
