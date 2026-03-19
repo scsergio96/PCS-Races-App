@@ -217,3 +217,11 @@ CLAUDE.md
 .worktrees/
 .superpowers/brainstorm/
 .venv-wsl/
+
+# Frontend
+frontend/.next/
+frontend/node_modules/
+frontend/.env*.local
+
+# Backend DB files (if run locally from backend/)
+backend/*.db
