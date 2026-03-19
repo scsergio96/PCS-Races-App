@@ -1,4 +1,4 @@
-vai p# CycleTracker — Community & Social Features Design
+# CycleTracker — Community & Social Features Design
 
 ## 1. Overview
 
