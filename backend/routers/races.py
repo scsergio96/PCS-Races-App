@@ -83,23 +83,55 @@ async def get_races(
     return all_races
 
 
-@router.get("/race/{race_url:path}", response_model=RaceDetailModel)
+def _detail_to_race_model(race_url: str, detail: RaceDetailModel) -> dict:
+    """Map RaceDetailModel fields → RaceModel fields for the frontend."""
+    year = detail.year
+    # Derive gender from URL (PCS uses /women/ for women's races)
+    gender = "WE" if "/women" in race_url else "ME"
+    # Startlist URL is derived from race URL
+    startlist_url = f"{race_url}/startlist" if detail.startlist else None
+    # is_future: race hasn't started yet (compare startdate)
+    is_future = False
+    if detail.startdate:
+        try:
+            import re
+            m = re.match(r"(\d{2})\.(\d{2})", detail.startdate)
+            if m and year >= CURRENT_YEAR:
+                today = date.today()
+                sd = date(year, int(m.group(2)), int(m.group(1)))
+                is_future = sd > today
+        except Exception:
+            pass
+    return {
+        "name": detail.name,
+        "race_url": race_url,
+        "year": year,
+        "start_date": detail.startdate,
+        "end_date": detail.enddate,
+        "uci_class": detail.uci_tour or detail.category,
+        "gender": gender,
+        "nation": detail.nationality,
+        "startlist_url": startlist_url,
+        "is_future": is_future,
+        "stages": None,
+    }
+
+
+@router.get("/race/{race_url:path}", response_model=RaceModel)
 async def get_race_detail(
     race_url: str,
-    include_startlist: bool = Query(default=False),
-    include_stages_winners: bool = Query(default=False),
     db: AsyncSession = Depends(get_db),
 ):
     cache = CacheService(db)
     cache_key = f"race_detail:{race_url}"
 
-    year = None
+    year = CURRENT_YEAR
     try:
         year = int(race_url.rstrip("/").split("/")[-1])
     except (ValueError, IndexError):
         pass
 
-    is_past = year is not None and year < CURRENT_YEAR
+    is_past = year < CURRENT_YEAR
     ttl = timedelta(days=365 * 10) if is_past else timedelta(hours=24)
 
     async def _scrape():
@@ -108,10 +140,8 @@ async def get_race_detail(
             detail = await asyncio.to_thread(
                 fetch_race_detail,
                 race_url=race_url,
-                include_startlist=include_startlist,
-                include_stages_winners=include_stages_winners,
             )
-            return detail.model_dump()
+            return _detail_to_race_model(race_url, detail)
         except Exception as e:
             raise HTTPException(500, f"Error fetching race: {e}")
 

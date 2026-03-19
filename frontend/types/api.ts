@@ -1,12 +1,13 @@
 // ── Race types ──────────────────────────────────────────────────────────────
 export interface Race {
   name: string;
-  url: string;
-  startDate: string;
+  raceUrl: string;
+  year: number;
+  startDate: string | null;
   endDate: string | null;
-  nation: string;
-  raceLevel: number;
-  gender: "ME" | "WE";
+  uciClass: string | null;
+  gender: string | null;
+  nation: string | null;
   startlistUrl: string | null;
   isFuture: boolean;
 }
@@ -31,7 +32,7 @@ export interface DiaryEntry {
   likeCount: number;
   commentCount: number;
   createdAt: string;
-  updatedAt: string;
+  updatedAt: string | null;
 }
 
 export interface DiaryEntryCreate {
@@ -68,7 +69,6 @@ export interface Comment {
   diaryEntryId: string;
   parentId: string | null;
   userId: string;
-  userDisplayName: string;
   body: string;
   isRemoved: boolean;
   likeCount: number;
@@ -80,7 +80,7 @@ export interface WatchlistItem {
   id: string;
   raceUrl: string;
   raceName: string;
-  raceDate: string;
+  raceDate: string | null;
   createdAt: string;
 }
 

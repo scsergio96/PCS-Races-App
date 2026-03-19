@@ -22,9 +22,9 @@ interface RaceCardProps {
 }
 
 export function RaceCard({ race, reviewed }: RaceCardProps) {
-  const flag = NATION_FLAGS[race.nation] ?? "🏁";
-  // Strip "race/" prefix from the URL to build the Next.js route
-  const slug = race.url.replace(/^race\//, "");
+  const flag = NATION_FLAGS[race.nation ?? ""] ?? "🏁";
+  // Strip "race/" prefix from the raceUrl to build the Next.js route
+  const slug = race.raceUrl.replace(/^race\//, "");
 
   return (
     <Link href={`/races/${slug}`}>
@@ -33,16 +33,18 @@ export function RaceCard({ race, reviewed }: RaceCardProps) {
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm text-zinc-50 truncate">{race.name}</p>
             <p className="text-xs text-zinc-400 mt-0.5">
-              {flag} {formatDate(race.startDate, race.endDate)}
+              {flag} {formatDate(race.startDate ?? "", race.endDate)}
             </p>
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
-            <Badge
-              variant="outline"
-              className="text-[10px] border-zinc-700 text-zinc-400"
-            >
-              UCI {race.raceLevel}
-            </Badge>
+            {race.uciClass && (
+              <Badge
+                variant="outline"
+                className="text-[10px] border-zinc-700 text-zinc-400"
+              >
+                {race.uciClass}
+              </Badge>
+            )}
             {reviewed && (
               <Badge className="text-[10px] bg-emerald-500/20 text-emerald-400 border-0">
                 Recensita

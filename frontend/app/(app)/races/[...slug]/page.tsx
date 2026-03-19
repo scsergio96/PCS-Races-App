@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WatchlistToggle } from "@/components/races/watchlist-toggle";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import type { Race, DiaryEntry } from "@/types/api";
+import type { Race, DiaryEntry, WatchlistItem } from "@/types/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -37,14 +38,30 @@ async function fetchMemories(
 
 async function fetchCommunityReviews(raceUrl: string): Promise<DiaryEntry[]> {
   try {
-    const res = await fetch(
-      `${API_URL}/race/${raceUrl}/community?sort=recent`,
-      { next: { revalidate: 300 } }
-    );
+    const res = await fetch(`${API_URL}/race/${raceUrl}/community`, {
+      next: { revalidate: 300 },
+    });
     if (!res.ok) return [];
     return res.json();
   } catch {
     return [];
+  }
+}
+
+async function fetchWatchlistItem(
+  raceUrl: string,
+  jwt: string
+): Promise<WatchlistItem | null> {
+  try {
+    const res = await fetch(`${API_URL}/watchlist`, {
+      headers: { Authorization: `Bearer ${jwt}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const items: WatchlistItem[] = await res.json();
+    return items.find((i) => i.raceUrl === raceUrl) ?? null;
+  } catch {
+    return null;
   }
 }
 
@@ -64,10 +81,11 @@ export default async function RaceDetailPage({
   } = await supabase.auth.getSession();
   const jwt = session?.access_token ?? "";
 
-  const [race, memories, communityReviews] = await Promise.all([
+  const [race, memories, communityReviews, watchlistItem] = await Promise.all([
     fetchRaceDetail(raceUrl),
     jwt ? fetchMemories(raceBaseSlug, jwt) : Promise.resolve([]),
     fetchCommunityReviews(raceUrl),
+    jwt ? fetchWatchlistItem(raceUrl, jwt) : Promise.resolve(null),
   ]);
 
   if (!race) notFound();
@@ -80,21 +98,17 @@ export default async function RaceDetailPage({
       <div className="mb-6">
         <h1 className="text-xl font-bold text-zinc-50">{race.name}</h1>
         <p className="text-zinc-400 text-sm mt-1">
-          {race.startDate}
+          {race.startDate ?? ""}
           {race.endDate && race.endDate !== race.startDate
             ? ` \u2013 ${race.endDate}`
             : ""}
-          {" \u00b7 "}
-          {race.nation}
-          {" \u00b7 "}
-          UCI {race.raceLevel}
+          {race.nation ? ` \u00b7 ${race.nation}` : ""}
+          {race.uciClass ? ` \u00b7 ${race.uciClass}` : ""}
         </p>
       </div>
 
-      {/* Tabs — defaultValue must match one of the TabsTrigger value props */}
+      {/* Tabs */}
       <Tabs defaultValue="info">
-        {/* TabsList variant="line" removes the pill background; active tab
-            gets data-active which the TabsTrigger styles target */}
         <TabsList
           variant="line"
           className="w-full justify-start border-b border-zinc-800 rounded-none h-auto pb-0 mb-4"
@@ -104,7 +118,7 @@ export default async function RaceDetailPage({
               { value: "info", label: "Info" },
               { value: "memories", label: "Memorie" },
               { value: "community", label: "Community" },
-              { value: "startlist", label: "Startlist" },
+              { value: "watchlist", label: "Watchlist" },
             ] as const
           ).map(({ value, label }) => (
             <TabsTrigger
@@ -122,13 +136,13 @@ export default async function RaceDetailPage({
           <div className="bg-zinc-900 rounded-xl p-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-zinc-400">Nazione</span>
-              <span className="text-zinc-50">{race.nation}</span>
+              <span className="text-zinc-50">{race.nation ?? "—"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-zinc-400">Categoria</span>
               <span className="text-zinc-50">
-                UCI {race.raceLevel} —{" "}
-                {race.gender === "ME" ? "Elite Uomini" : "Elite Donne"}
+                {race.uciClass ?? "—"}
+                {race.gender ? ` \u2014 ${race.gender === "ME" ? "Elite Uomini" : "Elite Donne"}` : ""}
               </span>
             </div>
             <div className="flex justify-between">
@@ -139,6 +153,20 @@ export default async function RaceDetailPage({
               <div className="flex justify-between">
                 <span className="text-zinc-400">Data fine</span>
                 <span className="text-zinc-50">{race.endDate}</span>
+              </div>
+            )}
+            {race.startlistUrl && (
+              <div className="flex justify-between items-center pt-1 border-t border-zinc-800">
+                <span className="text-zinc-400">Startlist</span>
+                <a
+                  href={race.startlistUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-zinc-300 hover:text-zinc-50 transition-colors text-xs"
+                >
+                  ProCyclingStats
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </div>
             )}
           </div>
@@ -171,7 +199,7 @@ export default async function RaceDetailPage({
                       </span>
                       {m.rating !== null && (
                         <span className="text-yellow-400 text-sm">
-                          {"★".repeat(m.rating)}
+                          {"&#9733;".repeat(m.rating)}
                         </span>
                       )}
                     </div>
@@ -220,23 +248,24 @@ export default async function RaceDetailPage({
           )}
         </TabsContent>
 
-        {/* Startlist tab */}
-        <TabsContent value="startlist">
-          {race.startlistUrl ? (
-            <div className="text-center py-8">
-              <a
-                href={race.startlistUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 border border-zinc-700 text-zinc-300 hover:text-zinc-50 hover:border-zinc-500 py-2 px-4 rounded-lg transition-colors"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Vedi startlist su ProCyclingStats
-              </a>
-            </div>
+        {/* Watchlist tab */}
+        <TabsContent value="watchlist">
+          {jwt ? (
+            <WatchlistToggle
+              raceUrl={raceUrl}
+              raceName={race.name}
+              raceDate={race.startDate}
+              initialItemId={watchlistItem?.id ?? null}
+            />
           ) : (
             <div className="text-center py-12 text-zinc-500">
-              <p>Startlist non disponibile.</p>
+              <p>Accedi per gestire la tua watchlist.</p>
+              <Link
+                href="/login"
+                className="text-[#E91E8C] hover:underline text-sm mt-2 inline-block"
+              >
+                Vai al login
+              </Link>
             </div>
           )}
         </TabsContent>

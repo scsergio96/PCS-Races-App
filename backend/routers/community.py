@@ -131,14 +131,19 @@ async def report_review(
     return {"reported": True}
 
 
+def _snake_to_camel(s: str) -> str:
+    parts = s.split("_")
+    return parts[0] + "".join(p.capitalize() for p in parts[1:])
+
+
 def _serialize_row(row: dict) -> dict:
     """Normalize a raw DB row for JSON serialization.
 
-    Converts integer boolean fields (SQLite stores booleans as 0/1) to
-    Python bool so the JSON response contains ``true``/``false``.
+    Converts snake_case keys to camelCase and integer boolean fields
+    (SQLite stores booleans as 0/1) to Python bool.
     """
-    bool_fields = {"is_public"}
+    bool_fields = {"is_public", "is_stage", "is_removed"}
     return {
-        k: bool(v) if k in bool_fields and isinstance(v, int) else v
+        _snake_to_camel(k): bool(v) if k in bool_fields and isinstance(v, int) else v
         for k, v in row.items()
     }

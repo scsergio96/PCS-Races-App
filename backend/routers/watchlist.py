@@ -3,6 +3,7 @@ from datetime import date, datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from models.base import CamelModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,13 +20,12 @@ class WatchlistCreate(BaseModel):
     race_date: Optional[date] = None
 
 
-class WatchlistResponse(BaseModel):
+class WatchlistResponse(CamelModel):
     id: uuid.UUID
     race_url: str
     race_name: str
     race_date: Optional[date]
     created_at: datetime
-    model_config = {"from_attributes": True}
 
 
 @router.get("/upcoming", response_model=list[WatchlistResponse])

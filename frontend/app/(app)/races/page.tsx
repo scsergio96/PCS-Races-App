@@ -67,7 +67,7 @@ export default async function RacesPage({
       ) : (
         <div className="space-y-3">
           {races.map((race) => (
-            <RaceCard key={race.url} race={race} />
+            <RaceCard key={race.raceUrl} race={race} />
           ))}
         </div>
       )}
