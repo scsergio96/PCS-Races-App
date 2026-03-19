@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.sqlite import JSON
+from sqlalchemy import JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -23,6 +23,8 @@ class DiaryEntry(Base):
     race_name: Mapped[str] = mapped_column(String(512), nullable=False)
     race_year: Mapped[int] = mapped_column(Integer, nullable=False)
     race_base_slug: Mapped[str] = mapped_column(Text, nullable=False)
+    is_stage: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    stage_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
     body: Mapped[str] = mapped_column(Text, nullable=False, default="")
     key_moment: Mapped[str | None] = mapped_column(Text, nullable=True)
