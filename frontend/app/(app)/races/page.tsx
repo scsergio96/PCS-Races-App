@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { RaceCard } from "@/components/races/race-card";
+import { RaceListClient } from "@/components/races/race-list-client";
 import { RaceFilters } from "@/components/races/race-filters";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Race } from "@/types/api";
@@ -69,21 +69,7 @@ export default async function RacesPage({
         </Suspense>
       </div>
 
-      {/* Race list */}
-      {races.length === 0 ? (
-        <div className="text-center py-16 text-[#cac8aa]">
-          <p className="tech-label">Nessuna gara trovata.</p>
-          <p className="text-xs mt-1 text-[#484831]">
-            Prova a cambiare i filtri o controlla che il backend sia avviato.
-          </p>
-        </div>
-      ) : (
-        <div className="divide-y divide-[#484831]">
-          {races.map((race, i) => (
-            <RaceCard key={race.raceUrl} race={race} striped={i % 2 === 0} />
-          ))}
-        </div>
-      )}
+      <RaceListClient races={races} />
     </div>
   );
 }
