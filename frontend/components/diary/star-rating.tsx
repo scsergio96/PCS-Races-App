@@ -10,7 +10,7 @@ interface StarRatingProps {
   size?: "sm" | "md" | "lg";
 }
 
-const sizes = { sm: "text-sm", md: "text-xl", lg: "text-3xl" };
+const sizes = { sm: "text-sm", md: "text-xl", lg: "text-4xl" };
 
 export function StarRating({
   value,
@@ -35,8 +35,8 @@ export function StarRating({
             className={cn(
               sizes[size],
               "transition-colors",
-              filled ? "text-yellow-400" : "text-zinc-600",
-              !readonly && "cursor-pointer hover:text-yellow-300"
+              filled ? "text-[#ffff00]" : "text-[#484831]",
+              !readonly && "cursor-pointer hover:text-[#cdcd00]"
             )}
           >
             &#9733;

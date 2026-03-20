@@ -39,46 +39,58 @@ export default async function DiaryPage({
   const entries = await fetchDiary(session.access_token, activeYear);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 pt-6 pb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-zinc-50">Il mio Diario</h1>
+    <div className="max-w-2xl mx-auto pb-8">
+      {/* Header */}
+      <div className="glass-nav border-b-2 border-[#ffff00] px-4 py-4 flex items-center justify-between sticky top-0 z-10">
+        <h1 className="kinetic-italic text-xl text-[#f8f8f5]">Diary</h1>
         <Link
           href="/diary/new"
-          className="bg-[#E91E8C] hover:bg-[#c4186f] text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+          className="bg-[#ffff00] text-black tech-label px-3 py-1.5 hover:bg-[#cdcd00] transition-colors"
         >
-          + Scrivi
+          NEW ENTRY
         </Link>
       </div>
 
-      {/* Year navigation — styled as tabs, server-rendered via URL param */}
-      <div className="flex border-b border-zinc-800 mb-4">
+      {/* Year tabs */}
+      <nav className="flex bg-[#1a1a0a] border-b border-[#484831]">
         {YEARS.map((y) => (
           <Link
             key={y}
             href={`/diary?year=${y}`}
-            className={`px-4 pb-2 border-b-2 text-sm transition-colors ${
+            className={`flex-1 text-center py-3 tech-label transition-colors ${
               y === activeYear
-                ? "border-[#E91E8C] text-zinc-50"
-                : "border-transparent text-zinc-500 hover:text-zinc-300"
+                ? "border-b-2 border-[#ffff00] text-[#ffff00]"
+                : "text-[#cac8aa] opacity-60 hover:opacity-100"
             }`}
           >
             {y}
           </Link>
         ))}
-      </div>
+      </nav>
 
+      {/* Entries */}
       {entries.length === 0 ? (
-        <div className="text-center py-16 text-zinc-500">
-          <p>Nessuna recensione per il {activeYear}.</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center gap-6 px-4">
+          <div className="w-20 h-20 bg-[#202013] flex items-center justify-center border-2 border-dashed border-[#484831]">
+            <span className="text-3xl">📓</span>
+          </div>
+          <div>
+            <h2 className="kinetic-italic text-2xl text-[#f8f8f5]">
+              Inizia il tuo diario
+            </h2>
+            <p className="text-[#cac8aa] mt-2 text-sm">
+              Nessuna recensione per il {activeYear}.
+            </p>
+          </div>
           <Link
             href="/diary/new"
-            className="inline-block mt-4 bg-[#E91E8C] hover:bg-[#c4186f] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            className="bg-[#ffff00] text-black font-black px-8 py-3 tech-label hover:bg-[#cdcd00] transition-colors"
           >
-            Scrivi la tua prima recensione
+            SCRIVI PRIMA RECENSIONE
           </Link>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="divide-y divide-[#484831]">
           {entries.map((entry) => (
             <DiaryCard key={entry.id} entry={entry} />
           ))}
