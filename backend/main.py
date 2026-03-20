@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from datetime import date
 import os
 import requests
@@ -47,6 +48,18 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="CycleTracker API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://pcs-races-app-fe.vercel.app",
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(community_router)
 app.include_router(races_router)
 app.include_router(diary_router)
