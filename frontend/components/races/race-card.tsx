@@ -9,13 +9,10 @@ const NATION_FLAGS: Record<string, string> = {
   PL: "🇵🇱", SI: "🇸🇮", CO: "🇨🇴", CA: "🇨🇦", JP: "🇯🇵",
 };
 
-function formatDate(start: string, end: string | null): string {
-  const pad = (d: Date) =>
-    `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
-  const s = new Date(start);
-  if (!end || start === end) return pad(s);
-  const e = new Date(end);
-  return `${pad(s)} → ${pad(e)}`;
+function formatDate(start: string | null, end: string | null): string {
+  if (!start) return "—";
+  if (!end || start === end) return start;
+  return `${start} → ${end}`;
 }
 
 interface RaceCardProps {
@@ -40,7 +37,7 @@ export function RaceCard({ race, striped = false }: RaceCardProps) {
         {/* Date row */}
         <div className="flex justify-between items-start mb-2">
           <span className="flex items-center gap-1 text-[#ffff00] font-bold text-sm">
-            {formatDate(race.startDate ?? "", race.endDate)}
+            {formatDate(race.startDate, race.endDate)}
           </span>
           <div className="flex gap-1">
             {race.isFuture && (
