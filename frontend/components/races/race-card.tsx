@@ -2,12 +2,6 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { Race } from "@/types/api";
 
-const NATION_FLAGS: Record<string, string> = {
-  IT: "🇮🇹", FR: "🇫🇷", ES: "🇪🇸", BE: "🇧🇪", NL: "🇳🇱",
-  DE: "🇩🇪", CH: "🇨🇭", GB: "🇬🇧", US: "🇺🇸", AU: "🇦🇺",
-  AT: "🇦🇹", PT: "🇵🇹", DK: "🇩🇰", NO: "🇳🇴", SE: "🇸🇪",
-  PL: "🇵🇱", SI: "🇸🇮", CO: "🇨🇴", CA: "🇨🇦", JP: "🇯🇵",
-};
 
 function formatDate(start: string | null, end: string | null): string {
   if (!start) return "—";
@@ -21,7 +15,7 @@ interface RaceCardProps {
 }
 
 export function RaceCard({ race, striped = false }: RaceCardProps) {
-  const flag = NATION_FLAGS[race.nation ?? ""] ?? "🏁";
+  const nationCode = race.nation?.toLowerCase() ?? "";
   const slug = race.raceUrl.replace(/^race\//, "");
   const isMen = race.gender === "ME";
   const isWomen = race.gender === "WE";
@@ -60,7 +54,11 @@ export function RaceCard({ race, striped = false }: RaceCardProps) {
 
         {/* Flag + Name */}
         <div className="flex items-center gap-3 mb-3">
-          <span className="text-2xl">{flag}</span>
+          {nationCode ? (
+            <span className={`fi fi-${nationCode} text-2xl`} />
+          ) : (
+            <span className="text-2xl">🏁</span>
+          )}
           <h3 className="kinetic-italic text-xl leading-tight">{race.name}</h3>
         </div>
 
