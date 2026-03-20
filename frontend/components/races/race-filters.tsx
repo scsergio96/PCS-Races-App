@@ -44,7 +44,7 @@ export function RaceFilters() {
       </button>
 
       {open && (
-        <div className="flex flex-wrap gap-2 mt-2 p-3 bg-[#202013] border border-[#484831]">
+        <div className="flex flex-wrap gap-2 mt-2 p-3 bg-[#2b2b1d] border border-[#484831]">
           <Select
             defaultValue={yearValue}
             onValueChange={(v) => { if (v !== null) setParam("year", v); }}

@@ -54,7 +54,7 @@ export default async function RacesPage({
       <div className="p-4 bg-[#202013]">
         <div className="flex items-end justify-between mb-4">
           <div>
-            <p className="tech-label text-[#ffff00] mb-1">World Tour {year}</p>
+            <p className="tech-label text-[#ffff00] mb-1">WORLD TOUR {year}</p>
             <h2 className="kinetic-italic text-3xl text-[#f8f8f5]">
               {races.length} Races Found
             </h2>
