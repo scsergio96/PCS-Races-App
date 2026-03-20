@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/races",
     display: "standalone",
     background_color: "#09090b",
-    theme_color: "#E91E8C",
+    theme_color: "#ffff00",
     icons: [
       {
         src: "/icon-192.png",
