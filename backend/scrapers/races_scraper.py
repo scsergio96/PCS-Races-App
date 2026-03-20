@@ -551,6 +551,15 @@ def fetch_race_detail(
 
 def fetch_stage_detail(stage_url: str) -> StageFullDetail:
     """Fetch full detail for a single stage using procyclingstats.Stage."""
+    import re as _re
+
+    def _stage_name_from_url(url: str) -> str:
+        segment = url.rstrip("/").split("/")[-1]
+        m = _re.match(r"stage-(\d+)", segment)
+        if m:
+            return f"Stage {m.group(1)}"
+        return segment.replace("-", " ").title()
+
     stage = PCSStage(stage_url)
 
     def _safe(fn):
@@ -593,7 +602,7 @@ def fetch_stage_detail(stage_url: str) -> StageFullDetail:
         print(f"[WARN] fetch_stage_detail gc failed for {stage_url}: {e}")
 
     return StageFullDetail(
-        stage_name=_safe(stage.stage_type) or "",
+        stage_name=_stage_name_from_url(stage_url),
         stage_url=stage_url,
         date=_safe(stage.date),
         distance=_safe(stage.distance),
