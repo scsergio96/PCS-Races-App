@@ -64,12 +64,14 @@ While stage data is loading, show skeleton rows inside each tab content area. Do
 
 ### 1. Fix stage list passthrough (`routers/races.py`)
 
-`_detail_to_race_model` currently sets `"stages": None`. Change to map `detail.stages` into the `StageInfo` shape already defined in `models/race.py`:
+**Specific site:** `_detail_to_race_model` function in `routers/races.py`. Line 182 currently reads `"stages": None` — this hardcoded `None` silently discards the stages list that the scraper already fetches correctly. Replace it with the mapping below.
 
 ```python
+# routers/races.py — inside _detail_to_race_model
+import re as _re
+
 stages = None
 if detail.stages:
-    import re as _re
     stages = []
     for s in detail.stages:
         # Extract stage number from URL: "race/.../stage-3" → 3
@@ -90,7 +92,9 @@ if detail.stages:
 
 `StageInfo` (in `models/race.py`) already has all these fields — no new model needed for the race list.
 
-### 2. New Pydantic model (`scrapers/races_scraper.py`)
+### 2. New Pydantic models (`scrapers/races_scraper.py`)
+
+Both models are added to `scrapers/races_scraper.py` alongside the existing `RaceResultEntry` (which is already defined there at lines 42-48). `StageFullDetail.results` reuses the existing `RaceResultEntry` class from the same file — no name collision, no new import needed.
 
 ```python
 class GCEntry(BaseModel):
@@ -111,8 +115,8 @@ class StageFullDetail(BaseModel):
     profile_icon: Optional[str]        # "p0"–"p5"
     vertical_meters: Optional[int]
     won_how: Optional[str]
-    results: List[RaceResultEntry]     # stage finishers (time = finish time)
-    gc: List[GCEntry]                  # GC standings (time = gap to leader)
+    results: List[RaceResultEntry]     # reuses existing RaceResultEntry (time = finish time)
+    gc: List[GCEntry]                  # GC standings (time = gap to leader, no team_name)
 ```
 
 `GCEntry` is separate from `RaceResultEntry` because GC data has no `team_name` and `time` holds a gap string, not a finish time.
