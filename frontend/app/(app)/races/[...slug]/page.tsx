@@ -10,7 +10,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 async function fetchRaceDetail(raceUrl: string): Promise<Race | null> {
   try {
-    const res = await fetch(`${API_URL}/race/${raceUrl}`, {
+    const res = await fetch(`${API_URL}/${raceUrl}`, {
       next: { revalidate: 3600 },
     });
     if (!res.ok) return null;

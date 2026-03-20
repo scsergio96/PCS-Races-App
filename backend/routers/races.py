@@ -122,12 +122,15 @@ async def get_race_detail(
     race_url: str,
     db: AsyncSession = Depends(get_db),
 ):
+    # race_url received as "tour-de-france/2026"
+    # PCS library expects "race/tour-de-france/2026"
+    pcs_race_url = f"race/{race_url}"
     cache = CacheService(db)
-    cache_key = f"race_detail:{race_url}"
+    cache_key = f"race_detail:{pcs_race_url}"
 
     year = CURRENT_YEAR
     try:
-        year = int(race_url.rstrip("/").split("/")[-1])
+        year = int(pcs_race_url.rstrip("/").split("/")[-1])
     except (ValueError, IndexError):
         pass
 
@@ -139,18 +142,18 @@ async def get_race_detail(
             import asyncio
             detail = await asyncio.to_thread(
                 fetch_race_detail,
-                race_url=race_url,
+                race_url=pcs_race_url,
             )
-            return _detail_to_race_model(race_url, detail)
+            return _detail_to_race_model(pcs_race_url, detail)
         except Exception as e:
-            raise HTTPException(500, f"Error fetching race: {e}")
+            raise HTTPException(404, f"Race not found or not yet available: {e}")
 
     data = await cache.get(
         cache_key,
         scrape_fn=_scrape,
         ttl=ttl,
         data_type="race_detail",
-        source_url=f"pcs/{race_url}",
+        source_url=f"pcs/{pcs_race_url}",
         is_immutable=is_past,
     )
     return data
