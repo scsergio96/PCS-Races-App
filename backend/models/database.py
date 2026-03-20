@@ -3,6 +3,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import NullPool
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
@@ -13,14 +14,15 @@ class Base(DeclarativeBase):
     pass
 
 
-# Neon (and any PgBouncer in transaction mode) doesn't support asyncpg prepared
-# statements. Disable the cache for PostgreSQL connections only.
-_connect_args = (
-    {"prepared_statement_cache_size": 0}
+# Vercel serverless + Neon (PgBouncer transaction mode) requires NullPool:
+# each request gets a fresh connection with no prepared statement cache.
+# SQLite (local dev) uses the default pool.
+_pool_kwargs = (
+    {"poolclass": NullPool}
     if DATABASE_URL.startswith("postgresql")
     else {}
 )
-engine = create_async_engine(DATABASE_URL, echo=False, connect_args=_connect_args)
+engine = create_async_engine(DATABASE_URL, echo=False, **_pool_kwargs)
 async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
