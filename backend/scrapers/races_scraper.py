@@ -10,8 +10,6 @@ from typing import Optional, List
 
 from models.race import RaceModel
 
-# Mapping gender → category PCS
-GENDER_TO_CATEGORY = {"ME": "1", "WE": "2"}
 
 
 # ---------------------------------------------------------------------------
@@ -143,21 +141,20 @@ def _build_url(
     year: int,
     offset: int,
     month: Optional[int],
-    gender: Optional[str],
+    category: Optional[int],
     race_level: Optional[int],
     nation: Optional[str],
+    race_class: Optional[str],
 ) -> str:
-    category = GENDER_TO_CATEGORY.get(gender.upper(), "") if gender else ""
-
     return (
         f"races.php"
         f"?s=calendar-plus-filters"
         f"&season={year}"
         f"&month={month if month else ''}"
-        f"&category={category}"
+        f"&category={category if category is not None else ''}"
         f"&racelevel={race_level if race_level is not None else ''}"
         f"&racenation={nation.lower() if nation else ''}"
-        f"&class="
+        f"&class={race_class if race_class else ''}"
         f"&filter=Filter"
         f"&offset={offset}"
     )
@@ -172,9 +169,10 @@ def fetch_races(
     max_pages_per_year: int = 5,
     only_future: Optional[bool] = None,
     month: Optional[int] = None,
-    gender: Optional[str] = None,
+    category: Optional[int] = None,
     race_level: Optional[int] = None,
     nation: Optional[str] = None,
+    race_class: Optional[str] = None,
 ) -> list[RaceModel]:
     all_races: list[RaceModel] = []
     page_size = 100
@@ -182,7 +180,7 @@ def fetch_races(
     for year in years:
         for page_num in range(max_pages_per_year):
             offset = page_num * page_size
-            url = _build_url(year, offset, month, gender, race_level, nation)
+            url = _build_url(year, offset, month, category, race_level, nation, race_class)
             print(url)
             try:
                 scraper = RacesList(url)

@@ -13,9 +13,13 @@ async function fetchRaces(
   const year =
     typeof yearParam === "string" ? yearParam : String(new Date().getFullYear());
   const levelParam = searchParams.level;
-  const level = typeof levelParam === "string" ? levelParam : undefined;
-  const genderParam = searchParams.gender;
-  const gender = typeof genderParam === "string" ? genderParam : undefined;
+  const level = typeof levelParam === "string" ? levelParam : "1";
+  const categoryParam = searchParams.category;
+  const category = typeof categoryParam === "string" ? categoryParam : "1";
+  const raceClassParam = searchParams.race_class;
+  const raceClass = typeof raceClassParam === "string" ? raceClassParam : undefined;
+  const monthParam = searchParams.month;
+  const month = typeof monthParam === "string" ? monthParam : undefined;
   const futureParam = searchParams.future;
   const future = typeof futureParam === "string" ? futureParam : "true";
 
@@ -25,7 +29,9 @@ async function fetchRaces(
     max_pages_per_year: "3",
   });
   if (level && level !== "all") query.set("race_level", level);
-  if (gender && gender !== "all") query.set("gender", gender);
+  if (category && category !== "all") query.set("category", category);
+  if (raceClass && raceClass !== "all") query.set("race_class", raceClass);
+  if (month && month !== "all") query.set("month", month);
   if (future === "true") query.set("only_future", "true");
   if (future === "false") query.set("only_future", "false");
 
