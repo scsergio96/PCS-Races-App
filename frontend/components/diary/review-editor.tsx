@@ -20,9 +20,11 @@ interface ReviewEditorProps {
   raceUrl?: string;
   raceName?: string;
   existing?: DiaryEntry;
+  isStage?: boolean;
+  stageNumber?: number | null;
 }
 
-export function ReviewEditor({ raceUrl, raceName, existing }: ReviewEditorProps) {
+export function ReviewEditor({ raceUrl, raceName, existing, isStage, stageNumber }: ReviewEditorProps) {
   const router = useRouter();
   const [rating, setRating] = useState<number | null>(existing?.rating ?? null);
   const [keyMoment, setKeyMoment] = useState(existing?.keyMoment ?? "");
@@ -152,6 +154,8 @@ export function ReviewEditor({ raceUrl, raceName, existing }: ReviewEditorProps)
         protagonist: protagonist || null,
         dominantEmotion: dominantEmotion || null,
         isPublic,
+        isStage: isStage ?? false,
+        stageNumber: stageNumber ?? null,
       };
 
       if (existing) {
