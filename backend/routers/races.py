@@ -153,7 +153,7 @@ async def get_race_detail(
         try:
             import asyncio
             detail = await asyncio.to_thread(
-                fetch_race_detail,
+                fetch_race_detail(include_startlist=True, include_stages_winners=True),
                 race_url=pcs_race_url,
             )
             return _detail_to_race_model(pcs_race_url, detail)
