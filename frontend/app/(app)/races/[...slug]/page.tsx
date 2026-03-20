@@ -161,7 +161,16 @@ export default async function RaceDetailPage({
           <div className="bg-[#202013] border border-[#484831] p-4 space-y-2 text-sm mx-4">
             <div className="flex justify-between">
               <span className="text-[#cac8aa]">Nazione</span>
-              <span className="text-[#f8f8f5]">{race.nation ?? "—"}</span>
+              <span className="text-[#f8f8f5]">
+                {race.nation ? (
+                  <>
+                    {({ IT:"🇮🇹",FR:"🇫🇷",ES:"🇪🇸",BE:"🇧🇪",NL:"🇳🇱",DE:"🇩🇪",CH:"🇨🇭",
+                       GB:"🇬🇧",US:"🇺🇸",AU:"🇦🇺",AT:"🇦🇹",PT:"🇵🇹",DK:"🇩🇰",
+                       NO:"🇳🇴",SE:"🇸🇪",PL:"🇵🇱",SI:"🇸🇮",CO:"🇨🇴",CA:"🇨🇦",JP:"🇯🇵",
+                     }[race.nation] ?? "🏁")} {race.nation}
+                  </>
+                ) : "—"}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-[#cac8aa]">Categoria</span>

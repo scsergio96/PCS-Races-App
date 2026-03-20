@@ -14,6 +14,60 @@ import { useState } from "react";
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
+const LEVEL_LABELS: Record<string, string> = {
+  all: "Tutti i livelli",
+  "1": "WorldTour",
+  "2": "Pro and up",
+  "3": "Level 1 and up",
+  "4": "Level 2 and up",
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  all: "Tutte le categorie",
+  "1": "ME - Men Elite",
+  "2": "WE - Women Elite",
+  "3": "MU - Men U23",
+  "4": "MJ - Men Juniors",
+  "6": "WJ - Women Juniors",
+  "7": "WU - Women U23",
+};
+
+const MONTH_LABELS: Record<string, string> = {
+  all: "Tutti i mesi",
+  "1": "Gennaio", "2": "Febbraio", "3": "Marzo",
+  "4": "Aprile", "5": "Maggio", "6": "Giugno",
+  "7": "Luglio", "8": "Agosto", "9": "Settembre",
+  "10": "Ottobre", "11": "Novembre", "12": "Dicembre",
+};
+
+// value = lowercase PCS code, label = flag + name
+const CYCLING_NATIONS = [
+  { value: "it", flag: "🇮🇹", name: "Italia" },
+  { value: "fr", flag: "🇫🇷", name: "Francia" },
+  { value: "es", flag: "🇪🇸", name: "Spagna" },
+  { value: "be", flag: "🇧🇪", name: "Belgio" },
+  { value: "nl", flag: "🇳🇱", name: "Paesi Bassi" },
+  { value: "de", flag: "🇩🇪", name: "Germania" },
+  { value: "ch", flag: "🇨🇭", name: "Svizzera" },
+  { value: "gb", flag: "🇬🇧", name: "Gran Bretagna" },
+  { value: "dk", flag: "🇩🇰", name: "Danimarca" },
+  { value: "no", flag: "🇳🇴", name: "Norvegia" },
+  { value: "se", flag: "🇸🇪", name: "Svezia" },
+  { value: "at", flag: "🇦🇹", name: "Austria" },
+  { value: "pt", flag: "🇵🇹", name: "Portogallo" },
+  { value: "pl", flag: "🇵🇱", name: "Polonia" },
+  { value: "si", flag: "🇸🇮", name: "Slovenia" },
+  { value: "au", flag: "🇦🇺", name: "Australia" },
+  { value: "co", flag: "🇨🇴", name: "Colombia" },
+  { value: "us", flag: "🇺🇸", name: "USA" },
+  { value: "ca", flag: "🇨🇦", name: "Canada" },
+  { value: "jp", flag: "🇯🇵", name: "Giappone" },
+];
+
+const NATION_LABEL: Record<string, string> = Object.fromEntries(
+  CYCLING_NATIONS.map((n) => [n.value, `${n.flag} ${n.name}`])
+);
+
 export function RaceFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -34,6 +88,7 @@ export function RaceFilters() {
   const categoryValue: string = searchParams.get("category") ?? "1";
   const raceClassValue: string = searchParams.get("race_class") ?? "all";
   const monthValue: string = searchParams.get("month") ?? "all";
+  const nationValue: string = searchParams.get("nation") ?? "all";
   const futureValue: string = searchParams.get("future") ?? "true";
 
   return (
@@ -70,18 +125,13 @@ export function RaceFilters() {
           {/* Anno */}
           <div className="flex flex-col gap-1">
             <span className="tech-label text-[#cac8aa] text-xs">ANNO</span>
-            <Select
-              value={yearValue}
-              onValueChange={(v) => { if (v !== null) setParam("year", v); }}
-            >
+            <Select value={yearValue} onValueChange={(v) => { if (v) setParam("year", v); }}>
               <SelectTrigger className="bg-[#1a1a0a] border-[#484831] text-[#f8f8f5] text-sm h-8 w-full">
-                <SelectValue />
+                <SelectValue>{yearValue}</SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-[#202013] border-[#484831]">
                 {years.map((y) => (
-                  <SelectItem key={y} value={String(y)} className="text-[#f8f8f5]">
-                    {y}
-                  </SelectItem>
+                  <SelectItem key={y} value={String(y)} className="text-[#f8f8f5]">{y}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -90,27 +140,15 @@ export function RaceFilters() {
           {/* Mese */}
           <div className="flex flex-col gap-1">
             <span className="tech-label text-[#cac8aa] text-xs">MESE</span>
-            <Select
-              value={monthValue}
-              onValueChange={(v) => { if (v !== null) setParam("month", v); }}
-            >
+            <Select value={monthValue} onValueChange={(v) => { if (v) setParam("month", v); }}>
               <SelectTrigger className="bg-[#1a1a0a] border-[#484831] text-[#f8f8f5] text-sm h-8 w-full">
-                <SelectValue placeholder="Tutti i mesi" />
+                <SelectValue>{MONTH_LABELS[monthValue] ?? monthValue}</SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-[#202013] border-[#484831]">
                 <SelectItem value="all" className="text-[#f8f8f5]">Tutti i mesi</SelectItem>
-                <SelectItem value="1" className="text-[#f8f8f5]">Gennaio</SelectItem>
-                <SelectItem value="2" className="text-[#f8f8f5]">Febbraio</SelectItem>
-                <SelectItem value="3" className="text-[#f8f8f5]">Marzo</SelectItem>
-                <SelectItem value="4" className="text-[#f8f8f5]">Aprile</SelectItem>
-                <SelectItem value="5" className="text-[#f8f8f5]">Maggio</SelectItem>
-                <SelectItem value="6" className="text-[#f8f8f5]">Giugno</SelectItem>
-                <SelectItem value="7" className="text-[#f8f8f5]">Luglio</SelectItem>
-                <SelectItem value="8" className="text-[#f8f8f5]">Agosto</SelectItem>
-                <SelectItem value="9" className="text-[#f8f8f5]">Settembre</SelectItem>
-                <SelectItem value="10" className="text-[#f8f8f5]">Ottobre</SelectItem>
-                <SelectItem value="11" className="text-[#f8f8f5]">Novembre</SelectItem>
-                <SelectItem value="12" className="text-[#f8f8f5]">Dicembre</SelectItem>
+                {Object.entries(MONTH_LABELS).filter(([k]) => k !== "all").map(([v, label]) => (
+                  <SelectItem key={v} value={v} className="text-[#f8f8f5]">{label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -118,12 +156,9 @@ export function RaceFilters() {
           {/* Livello */}
           <div className="flex flex-col gap-1">
             <span className="tech-label text-[#cac8aa] text-xs">LIVELLO</span>
-            <Select
-              value={levelValue}
-              onValueChange={(v) => { if (v !== null) setParam("level", v); }}
-            >
+            <Select value={levelValue} onValueChange={(v) => { if (v) setParam("level", v); }}>
               <SelectTrigger className="bg-[#1a1a0a] border-[#484831] text-[#f8f8f5] text-sm h-8 w-full">
-                <SelectValue />
+                <SelectValue>{LEVEL_LABELS[levelValue] ?? levelValue}</SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-[#202013] border-[#484831]">
                 <SelectItem value="all" className="text-[#f8f8f5]">Tutti i livelli</SelectItem>
@@ -138,12 +173,9 @@ export function RaceFilters() {
           {/* Categoria */}
           <div className="flex flex-col gap-1">
             <span className="tech-label text-[#cac8aa] text-xs">CATEGORIA</span>
-            <Select
-              value={categoryValue}
-              onValueChange={(v) => { if (v !== null) setParam("category", v); }}
-            >
+            <Select value={categoryValue} onValueChange={(v) => { if (v) setParam("category", v); }}>
               <SelectTrigger className="bg-[#1a1a0a] border-[#484831] text-[#f8f8f5] text-sm h-8 w-full">
-                <SelectValue />
+                <SelectValue>{CATEGORY_LABELS[categoryValue] ?? categoryValue}</SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-[#202013] border-[#484831]">
                 <SelectItem value="all" className="text-[#f8f8f5]">Tutte le categorie</SelectItem>
@@ -157,15 +189,34 @@ export function RaceFilters() {
             </Select>
           </div>
 
-          {/* Classe */}
+          {/* Nazione */}
+          <div className="flex flex-col gap-1 col-span-2">
+            <span className="tech-label text-[#cac8aa] text-xs">NAZIONE</span>
+            <Select value={nationValue} onValueChange={(v) => { if (v) setParam("nation", v); }}>
+              <SelectTrigger className="bg-[#1a1a0a] border-[#484831] text-[#f8f8f5] text-sm h-8 w-full">
+                <SelectValue>
+                  {nationValue === "all" ? "Tutte le nazioni" : NATION_LABEL[nationValue] ?? nationValue.toUpperCase()}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-[#202013] border-[#484831]">
+                <SelectItem value="all" className="text-[#f8f8f5]">Tutte le nazioni</SelectItem>
+                {CYCLING_NATIONS.map((n) => (
+                  <SelectItem key={n.value} value={n.value} className="text-[#f8f8f5]">
+                    {n.flag} {n.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Classe UCI */}
           <div className="flex flex-col gap-1 col-span-2">
             <span className="tech-label text-[#cac8aa] text-xs">CLASSE UCI</span>
-            <Select
-              value={raceClassValue}
-              onValueChange={(v) => { if (v !== null) setParam("race_class", v); }}
-            >
+            <Select value={raceClassValue} onValueChange={(v) => { if (v) setParam("race_class", v); }}>
               <SelectTrigger className="bg-[#1a1a0a] border-[#484831] text-[#f8f8f5] text-sm h-8 w-full">
-                <SelectValue placeholder="Tutte le classi" />
+                <SelectValue>
+                  {raceClassValue === "all" ? "Tutte le classi" : raceClassValue}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-[#202013] border-[#484831]">
                 <SelectItem value="all" className="text-[#f8f8f5]">Tutte le classi</SelectItem>
