@@ -14,15 +14,17 @@ class Base(DeclarativeBase):
     pass
 
 
-# Vercel serverless + Neon (PgBouncer transaction mode) requires NullPool:
-# each request gets a fresh connection with no prepared statement cache.
-# SQLite (local dev) uses the default pool.
-_pool_kwargs = (
-    {"poolclass": NullPool}
+# Vercel serverless + Neon (PgBouncer transaction mode):
+# - NullPool: no SQLAlchemy-level connection reuse
+# - statement_cache_size=0: asyncpg won't send PREPARE statements,
+#   preventing DuplicatePreparedStatementError when PgBouncer reuses
+#   a backend connection that already has prepared statements.
+_engine_kwargs = (
+    {"poolclass": NullPool, "connect_args": {"statement_cache_size": 0}}
     if DATABASE_URL.startswith("postgresql")
     else {}
 )
-engine = create_async_engine(DATABASE_URL, echo=False, **_pool_kwargs)
+engine = create_async_engine(DATABASE_URL, echo=False, **_engine_kwargs)
 async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
