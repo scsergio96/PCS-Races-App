@@ -561,6 +561,7 @@ def fetch_stage_detail(stage_url: str) -> StageFullDetail:
             return f"Stage {m.group(1)}"
         return segment.replace("-", " ").title()
 
+    stage_url = stage_url.lstrip("/")
     stage = PCSStage(stage_url)
 
     def _safe(fn):

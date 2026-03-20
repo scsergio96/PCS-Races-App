@@ -110,7 +110,7 @@ def _map_stages(raw_stages):
             "number": number,
             "name": s.stage_name,
             "date": s.date,
-            "stage_url": s.stage_url,
+            "stage_url": s.stage_url.lstrip("/"),
             "profile_icon": s.profile_icon,
             "departure": None,
             "arrival": None,
