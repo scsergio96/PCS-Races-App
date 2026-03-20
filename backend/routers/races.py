@@ -75,6 +75,18 @@ async def get_races(
         )
         all_races.extend(data)
 
+    today = date.today()
+    for r in all_races:
+        start = r.get("start_date") or ""
+        year_val = r.get("year", CURRENT_YEAR)
+        r["is_future"] = False
+        try:
+            if len(start) == 5 and "." in start:
+                d, m = int(start[:2]), int(start[3:])
+                r["is_future"] = date(year_val, m, d) > today
+        except Exception:
+            pass
+
     if only_future is True:
         all_races = [r for r in all_races if r.get("is_future")]
     elif only_future is False:
@@ -122,9 +134,9 @@ async def get_race_detail(
     race_url: str,
     db: AsyncSession = Depends(get_db),
 ):
-    # race_url received as "tour-de-france/2026"
-    # PCS library expects "race/tour-de-france/2026"
-    pcs_race_url = f"race/{race_url}"
+    # race_url received URL-decoded as "race/tour-de-france/2026"
+    # (frontend sends encodeURIComponent of the full raceUrl)
+    pcs_race_url = race_url
     cache = CacheService(db)
     cache_key = f"race_detail:{pcs_race_url}"
 

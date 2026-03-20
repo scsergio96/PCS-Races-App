@@ -21,7 +21,7 @@ export function RaceFilters() {
 
   function setParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    if (value === "all") {
+    if (value === "all" && key !== "future") {
       params.delete(key);
     } else {
       params.set(key, value);
@@ -66,7 +66,7 @@ export function RaceFilters() {
       {open && (
         <div className="flex flex-wrap gap-2 mt-2 p-3 bg-[#2b2b1d] border border-[#484831]">
           <Select
-            defaultValue={yearValue}
+            value={yearValue}
             onValueChange={(v) => { if (v !== null) setParam("year", v); }}
           >
             <SelectTrigger className="shrink-0 bg-[#2b2b1d] border-[#484831] text-[#f8f8f5] text-sm h-8 min-w-[90px]">
@@ -82,7 +82,7 @@ export function RaceFilters() {
           </Select>
 
           <Select
-            defaultValue={levelValue}
+            value={levelValue}
             onValueChange={(v) => { if (v !== null) setParam("level", v); }}
           >
             <SelectTrigger className="shrink-0 bg-[#2b2b1d] border-[#484831] text-[#f8f8f5] text-sm h-8 min-w-[100px]">
@@ -98,7 +98,7 @@ export function RaceFilters() {
           </Select>
 
           <Select
-            defaultValue={genderValue}
+            value={genderValue}
             onValueChange={(v) => { if (v !== null) setParam("gender", v); }}
           >
             <SelectTrigger className="shrink-0 bg-[#2b2b1d] border-[#484831] text-[#f8f8f5] text-sm h-8 min-w-[90px]">

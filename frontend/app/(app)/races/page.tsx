@@ -50,7 +50,13 @@ export default async function RacesPage({
     typeof params.year === "string"
       ? params.year
       : String(new Date().getFullYear());
-  const races = await fetchRaces(params);
+  const rawRaces = await fetchRaces(params);
+  const seen = new Set<string>();
+  const races = rawRaces.filter((r) => {
+    if (seen.has(r.raceUrl)) return false;
+    seen.add(r.raceUrl);
+    return true;
+  });
 
   return (
     <div className="max-w-2xl mx-auto pb-8">
