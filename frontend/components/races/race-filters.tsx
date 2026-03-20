@@ -32,10 +32,30 @@ export function RaceFilters() {
   const yearValue: string = searchParams.get("year") ?? String(currentYear);
   const levelValue: string = searchParams.get("level") ?? "all";
   const genderValue: string = searchParams.get("gender") ?? "all";
+  const futureValue: string = searchParams.get("future") ?? "true";
 
   return (
     <div>
+      {/* Future / All toggle chips */}
+      <div className="flex gap-2 mb-2">
+        {(["true", "all"] as const).map((val) => (
+          <button
+            key={val}
+            type="button"
+            onClick={() => setParam("future", val)}
+            className={`tech-label px-3 py-1.5 border transition-colors ${
+              futureValue === val
+                ? "bg-[#ffff00] text-black border-[#ffff00]"
+                : "bg-transparent text-[#cac8aa] border-[#484831] hover:border-[#ffff00]/50"
+            }`}
+          >
+            {val === "true" ? "FUTURE" : "TUTTE"}
+          </button>
+        ))}
+      </div>
+
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-center gap-2 bg-[#ffff00] text-black font-black py-3 tech-label text-sm hover:bg-[#cdcd00] transition-colors"
       >

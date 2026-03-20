@@ -16,6 +16,8 @@ async function fetchRaces(
   const level = typeof levelParam === "string" ? levelParam : undefined;
   const genderParam = searchParams.gender;
   const gender = typeof genderParam === "string" ? genderParam : undefined;
+  const futureParam = searchParams.future;
+  const future = typeof futureParam === "string" ? futureParam : "true";
 
   const query = new URLSearchParams({
     year_from: year,
@@ -24,6 +26,8 @@ async function fetchRaces(
   });
   if (level && level !== "all") query.set("race_level", level);
   if (gender && gender !== "all") query.set("gender", gender);
+  if (future === "true") query.set("only_future", "true");
+  if (future === "false") query.set("only_future", "false");
 
   try {
     const res = await fetch(`${API_URL}/races?${query}`, {
