@@ -13,7 +13,14 @@ class Base(DeclarativeBase):
     pass
 
 
-engine = create_async_engine(DATABASE_URL, echo=False)
+# Neon (and any PgBouncer in transaction mode) doesn't support asyncpg prepared
+# statements. Disable the cache for PostgreSQL connections only.
+_connect_args = (
+    {"prepared_statement_cache_size": 0}
+    if DATABASE_URL.startswith("postgresql")
+    else {}
+)
+engine = create_async_engine(DATABASE_URL, echo=False, connect_args=_connect_args)
 async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
