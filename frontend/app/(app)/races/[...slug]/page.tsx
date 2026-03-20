@@ -93,76 +93,101 @@ export default async function RaceDetailPage({
   const writeUrl = `/diary/new?race_url=${encodeURIComponent(raceUrl)}&race_name=${encodeURIComponent(race.name)}`;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 pt-6 pb-8">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-zinc-50">{race.name}</h1>
-        <p className="text-zinc-400 text-sm mt-1">
-          {race.startDate ?? ""}
-          {race.endDate && race.endDate !== race.startDate
-            ? ` \u2013 ${race.endDate}`
-            : ""}
-          {race.nation ? ` \u00b7 ${race.nation}` : ""}
-          {race.uciClass ? ` \u00b7 ${race.uciClass}` : ""}
-        </p>
+    <div className="max-w-2xl mx-auto pb-8">
+      {/* Hero */}
+      <div className="relative w-full h-48 bg-[#202013] overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a0a] via-[#1a1a0a]/40 to-transparent z-10" />
+        <div className="absolute bottom-4 left-4 right-4 z-20">
+          <span className="inline-block bg-[#ffff00] text-black tech-label px-2 py-0.5 mb-2">
+            {race.uciClass ?? "UCI"}
+          </span>
+          <h1 className="kinetic-italic text-3xl text-[#f8f8f5] leading-none">
+            {race.name}
+          </h1>
+        </div>
+      </div>
+
+      {/* Meta grid */}
+      <div className="grid grid-cols-2 gap-2 p-4">
+        <div className="bg-[#202013] border border-[#484831] p-3">
+          <span className="tech-label text-[#cac8aa] block mb-1">Date</span>
+          <span className="text-sm font-bold">
+            {race.startDate}{race.endDate && race.endDate !== race.startDate ? ` — ${race.endDate}` : ""}
+          </span>
+        </div>
+        <div className="bg-[#202013] border border-[#484831] p-3">
+          <span className="tech-label text-[#cac8aa] block mb-1">Category</span>
+          <span className="text-sm font-bold">
+            {race.gender === "ME" ? "Men Elite" : race.gender === "WE" ? "Women Elite" : race.gender}
+          </span>
+        </div>
+        <div className="bg-[#ffff00]/10 border border-[#ffff00]/20 p-3 col-span-2">
+          <span className="tech-label text-[#ffff00] block mb-1">Classification</span>
+          <span className="text-sm font-bold text-[#ffff00]">{race.uciClass}</span>
+        </div>
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="info">
-        <TabsList
-          variant="line"
-          className="w-full justify-start border-b border-zinc-800 rounded-none h-auto pb-0 mb-4"
-        >
-          {(
-            [
-              { value: "info", label: "Info" },
-              { value: "memories", label: "Memorie" },
-              { value: "community", label: "Community" },
-              { value: "watchlist", label: "Watchlist" },
-            ] as const
-          ).map(({ value, label }) => (
-            <TabsTrigger
-              key={value}
-              value={value}
-              className="rounded-none border-b-2 border-transparent data-active:border-[#E91E8C] data-active:text-zinc-50 text-zinc-500 px-4 pb-2 bg-transparent"
-            >
-              {label}
-            </TabsTrigger>
-          ))}
+        <TabsList className="w-full bg-transparent border-b border-[#484831] rounded-none h-auto px-4">
+          <TabsTrigger
+            value="info"
+            className="tech-label rounded-none border-b-2 border-transparent data-[state=active]:border-[#ffff00] data-[state=active]:text-[#ffff00] pb-2 pt-3"
+          >
+            INFO
+          </TabsTrigger>
+          <TabsTrigger
+            value="memories"
+            className="tech-label rounded-none border-b-2 border-transparent data-[state=active]:border-[#ffff00] data-[state=active]:text-[#ffff00] pb-2 pt-3"
+          >
+            MEMORIE
+          </TabsTrigger>
+          <TabsTrigger
+            value="community"
+            className="tech-label rounded-none border-b-2 border-transparent data-[state=active]:border-[#ffff00] data-[state=active]:text-[#ffff00] pb-2 pt-3"
+          >
+            COMMUNITY
+          </TabsTrigger>
+          <TabsTrigger
+            value="watchlist"
+            className="tech-label rounded-none border-b-2 border-transparent data-[state=active]:border-[#ffff00] data-[state=active]:text-[#ffff00] pb-2 pt-3"
+          >
+            WATCHLIST
+          </TabsTrigger>
         </TabsList>
 
         {/* Info tab */}
         <TabsContent value="info" className="space-y-4">
-          <div className="bg-zinc-900 rounded-xl p-4 space-y-2 text-sm">
+          <div className="bg-[#202013] border border-[#484831] p-4 space-y-2 text-sm mx-4">
             <div className="flex justify-between">
-              <span className="text-zinc-400">Nazione</span>
-              <span className="text-zinc-50">{race.nation ?? "—"}</span>
+              <span className="text-[#cac8aa]">Nazione</span>
+              <span className="text-[#f8f8f5]">{race.nation ?? "—"}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-zinc-400">Categoria</span>
-              <span className="text-zinc-50">
+              <span className="text-[#cac8aa]">Categoria</span>
+              <span className="text-[#f8f8f5]">
                 {race.uciClass ?? "—"}
                 {race.gender ? ` \u2014 ${race.gender === "ME" ? "Elite Uomini" : "Elite Donne"}` : ""}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-zinc-400">Data inizio</span>
-              <span className="text-zinc-50">{race.startDate}</span>
+              <span className="text-[#cac8aa]">Data inizio</span>
+              <span className="text-[#f8f8f5]">{race.startDate}</span>
             </div>
             {race.endDate && race.endDate !== race.startDate && (
               <div className="flex justify-between">
-                <span className="text-zinc-400">Data fine</span>
-                <span className="text-zinc-50">{race.endDate}</span>
+                <span className="text-[#cac8aa]">Data fine</span>
+                <span className="text-[#f8f8f5]">{race.endDate}</span>
               </div>
             )}
             {race.startlistUrl && (
-              <div className="flex justify-between items-center pt-1 border-t border-zinc-800">
-                <span className="text-zinc-400">Startlist</span>
+              <div className="flex justify-between items-center pt-1 border-t border-[#484831]">
+                <span className="text-[#cac8aa]">Startlist</span>
                 <a
                   href={race.startlistUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-zinc-300 hover:text-zinc-50 transition-colors text-xs"
+                  className="inline-flex items-center gap-1 text-[#cac8aa] hover:text-[#f8f8f5] transition-colors text-xs"
                 >
                   ProCyclingStats
                   <ExternalLink className="w-3 h-3" />
@@ -173,16 +198,16 @@ export default async function RaceDetailPage({
 
           <Link
             href={writeUrl}
-            className="block w-full text-center bg-[#E91E8C] hover:bg-[#c4186f] text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            className="flex items-center justify-center gap-2 bg-[#ffff00] text-black tech-label px-3 py-3 mx-4 hover:bg-[#cdcd00] transition-colors"
           >
-            Scrivi la tua recensione
+            + SCRIVI RECENSIONE
           </Link>
         </TabsContent>
 
         {/* Memories tab */}
         <TabsContent value="memories">
           {memories.length === 0 ? (
-            <div className="text-center py-12 text-zinc-500">
+            <div className="text-center py-12 text-[#cac8aa]">
               <p>Nessun ricordo per questa gara.</p>
               <p className="text-xs mt-1">
                 Torna dopo aver scritto la tua prima recensione!
@@ -192,18 +217,18 @@ export default async function RaceDetailPage({
             <div className="space-y-3">
               {memories.map((m) => (
                 <Link key={m.id} href={`/diary/${m.id}`}>
-                  <div className="bg-zinc-900 rounded-xl p-4 hover:border-zinc-600 border border-zinc-800 transition-colors">
+                  <div className="bg-[#202013] border border-[#484831] p-4 transition-colors">
                     <div className="flex justify-between items-start mb-1">
-                      <span className="font-semibold text-sm text-zinc-50">
+                      <span className="font-semibold text-sm text-[#f8f8f5]">
                         {m.raceYear}
                       </span>
                       {m.rating !== null && (
-                        <span className="text-yellow-400 text-sm">
+                        <span className="text-[#ffff00] text-sm">
                           {"&#9733;".repeat(m.rating)}
                         </span>
                       )}
                     </div>
-                    <p className="text-zinc-400 text-sm line-clamp-2">
+                    <p className="text-[#cac8aa] text-sm line-clamp-2">
                       {m.body.replace(/<[^>]+>/g, "")}
                     </p>
                   </div>
@@ -216,7 +241,7 @@ export default async function RaceDetailPage({
         {/* Community tab */}
         <TabsContent value="community">
           {communityReviews.length === 0 ? (
-            <div className="text-center py-12 text-zinc-500">
+            <div className="text-center py-12 text-[#cac8aa]">
               <p>Nessuna recensione pubblica per questa gara.</p>
               <p className="text-xs mt-1">Sii il primo!</p>
             </div>
@@ -225,20 +250,20 @@ export default async function RaceDetailPage({
               {communityReviews.map((r) => (
                 <div
                   key={r.id}
-                  className="bg-zinc-900 rounded-xl p-4 border border-zinc-800"
+                  className="bg-[#202013] border border-[#484831] p-4"
                 >
                   <div className="flex justify-between mb-1">
-                    <span className="text-xs text-zinc-400">{r.raceYear}</span>
+                    <span className="text-xs text-[#cac8aa]">{r.raceYear}</span>
                     {r.rating !== null && (
-                      <span className="text-yellow-400 text-sm">
+                      <span className="text-[#ffff00] text-sm">
                         {"★".repeat(r.rating)}
                       </span>
                     )}
                   </div>
-                  <p className="text-zinc-300 text-sm line-clamp-3">
+                  <p className="text-[#f8f8f5] text-sm line-clamp-3">
                     {r.body.replace(/<[^>]+>/g, "")}
                   </p>
-                  <div className="flex gap-3 mt-2 text-xs text-zinc-500">
+                  <div className="flex gap-3 mt-2 text-xs text-[#cac8aa]">
                     <span>&#10084; {r.likeCount}</span>
                     <span>&#128172; {r.commentCount}</span>
                   </div>
@@ -258,11 +283,11 @@ export default async function RaceDetailPage({
               initialItemId={watchlistItem?.id ?? null}
             />
           ) : (
-            <div className="text-center py-12 text-zinc-500">
+            <div className="text-center py-12 text-[#cac8aa]">
               <p>Accedi per gestire la tua watchlist.</p>
               <Link
                 href="/login"
-                className="text-[#E91E8C] hover:underline text-sm mt-2 inline-block"
+                className="text-[#ffff00] hover:underline text-sm mt-2 inline-block"
               >
                 Vai al login
               </Link>
