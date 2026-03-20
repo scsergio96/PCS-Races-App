@@ -91,9 +91,8 @@ export default async function RaceDetailPage({
   const writeUrl = `/diary/new?race_url=${encodeURIComponent(raceUrl)}&race_name=${encodeURIComponent(race.name)}`;
   const hasStartlist = race.startlist && race.startlist.length > 0;
   const hasResults =
-    !race.isFuture &&
-    ((race.stagesWinners && race.stagesWinners.length > 0) ||
-      (race.raceResults && race.raceResults.length > 0));
+    (race.stagesWinners && race.stagesWinners.length > 0) ||
+    (race.raceResults && race.raceResults.length > 0);
 
   return (
     <div className="max-w-2xl mx-auto pb-8">

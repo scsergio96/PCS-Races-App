@@ -332,6 +332,74 @@ def fetch_race_result(race_url: str) -> tuple:
     return results, race_info
 
 
+def _fetch_startlist_v4(startlist_url: str) -> Optional[List[StartlistEntry]]:
+    """Parse the startlist_v4 format used by future races on PCS.
+    HTML: ul.startlist_v4 > li > div.ridersCont > ul > li (one per rider).
+    """
+    try:
+        scraper = Scraper(startlist_url)
+        soup = BeautifulSoup(scraper.html.html, "html.parser")
+    except Exception as e:
+        print(f"[WARN] _fetch_startlist_v4 failed for {startlist_url}: {e}")
+        return None
+
+    startlist_ul = soup.find("ul", class_="startlist_v4")
+    if not startlist_ul:
+        return None
+
+    entries: List[StartlistEntry] = []
+    for team_li in startlist_ul.find_all("li", recursive=False):
+        riders_cont = team_li.find("div", class_="ridersCont")
+        if not riders_cont:
+            continue
+
+        # Team name from the team link
+        team_name: Optional[str] = None
+        team_link = riders_cont.find("a", class_="team")
+        if team_link:
+            team_name = team_link.get_text(strip=True)
+
+        riders_ul = riders_cont.find("ul")
+        if not riders_ul:
+            continue
+
+        for rider_li in riders_ul.find_all("li", recursive=False):
+            # Bib number
+            rider_number: Optional[int] = None
+            bib_span = rider_li.find("span", class_="bib")
+            if bib_span:
+                try:
+                    rider_number = int(bib_span.get_text(strip=True))
+                except (ValueError, TypeError):
+                    pass
+
+            # Nationality from flag span
+            nationality: Optional[str] = None
+            flag_span = rider_li.find("span", class_="flag")
+            if flag_span:
+                codes = [c for c in flag_span.get("class", []) if c != "flag"]
+                nationality = codes[0].upper() if codes else None
+
+            # Rider name and URL
+            rider_name = ""
+            rider_url_val = ""
+            rider_link = rider_li.find("a", href=lambda h: h and h.startswith("rider/"))
+            if rider_link:
+                rider_url_val = rider_link["href"]
+                rider_name = rider_link.get_text(strip=True)
+
+            if rider_name:
+                entries.append(StartlistEntry(
+                    rider_name=rider_name,
+                    rider_url=rider_url_val,
+                    team_name=team_name,
+                    nationality=nationality,
+                    rider_number=rider_number,
+                ))
+
+    return entries if entries else None
+
+
 def fetch_race_detail(
     race_url: str,
     include_startlist: bool = False,
@@ -385,23 +453,27 @@ def fetch_race_detail(
     # Startlist (opzionale)
     startlist: Optional[List[StartlistEntry]] = None
     if include_startlist:
-        try:
-            startlist_url = race_url.rstrip("/") + "/startlist"
-            pcs_startlist = PCSRaceStartlist(startlist_url)
-            raw_startlist = pcs_startlist.startlist()
-            startlist = [
-                StartlistEntry(
-                    rider_name=r.get("rider_name", ""),
-                    rider_url=r.get("rider_url", ""),
-                    team_name=r.get("team_name"),
-                    team_url=r.get("team_url"),
-                    nationality=r.get("nationality"),
-                    rider_number=r.get("rider_number"),
-                )
-                for r in raw_startlist
-            ]
-        except Exception as e:
-            print(f"[WARN] startlist fetch failed for {race_url}: {e}")
+        startlist_url = race_url.rstrip("/") + "/startlist"
+        # Try custom parser first (handles startlist_v4 format used by future races)
+        startlist = _fetch_startlist_v4(startlist_url)
+        if not startlist:
+            # Fallback to library for older table-based format
+            try:
+                pcs_startlist = PCSRaceStartlist(startlist_url)
+                raw_startlist = pcs_startlist.startlist()
+                startlist = [
+                    StartlistEntry(
+                        rider_name=r.get("rider_name", ""),
+                        rider_url=r.get("rider_url", ""),
+                        team_name=r.get("team_name"),
+                        team_url=r.get("team_url"),
+                        nationality=r.get("nationality"),
+                        rider_number=r.get("rider_number"),
+                    )
+                    for r in raw_startlist
+                ] or None
+            except Exception as e:
+                print(f"[WARN] startlist fetch (library) failed for {race_url}: {e}")
 
     # One-day race results (only for past one-day races)
     race_results: Optional[List[RaceResultEntry]] = None
@@ -421,9 +493,17 @@ def fetch_race_detail(
         except Exception:
             pass
 
-    if include_results and is_one_day and not _is_future:
+    if include_results and is_one_day:
         try:
-            race_results, race_info = fetch_race_result(race_url)
+            fetched_results, fetched_info = fetch_race_result(race_url)
+            # Race info is useful even for future races (distance, departure, arrival…)
+            race_info = fetched_info if any([
+                fetched_info.distance, fetched_info.departure, fetched_info.arrival,
+                fetched_info.won_how, fetched_info.avg_speed, fetched_info.avg_temperature,
+            ]) else None
+            # Results only make sense for past races
+            if not _is_future and fetched_results:
+                race_results = fetched_results
         except Exception as e:
             print(f"[WARN] race results fetch failed for {race_url}: {e}")
 
