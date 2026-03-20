@@ -159,6 +159,8 @@ export function StageRaceView({
     async (stageUrl: string | null) => {
       setSelectedStageUrl(stageUrl);
       setStageData(null);
+      setStageMemories([]);
+      setStageCommunity([]);
 
       if (!stageUrl) return;
 
@@ -291,8 +293,8 @@ export function StageRaceView({
               <Skeleton />
             ) : stageData?.results && stageData.results.length > 0 ? (
               <div className="divide-y divide-[#484831]">
-                {stageData.results.map((r, i) => (
-                  <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                {stageData.results.map((r) => (
+                  <div key={r.riderUrl} className="flex items-center gap-3 px-4 py-2.5">
                     {r.rank != null && (
                       <span className="text-[#cac8aa] tech-label w-6 text-right shrink-0">
                         {r.rank}
@@ -332,8 +334,8 @@ export function StageRaceView({
               <Skeleton />
             ) : stageData?.gc && stageData.gc.length > 0 ? (
               <div className="divide-y divide-[#484831]">
-                {stageData.gc.map((entry, i) => (
-                  <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                {stageData.gc.map((entry) => (
+                  <div key={entry.riderUrl} className="flex items-center gap-3 px-4 py-2.5">
                     {entry.rank != null && (
                       <span
                         className={`tech-label w-6 text-right shrink-0 ${
@@ -531,8 +533,8 @@ export function StageRaceView({
         <TabsContent value="startlist">
           {hasStartlist ? (
             <div className="divide-y divide-[#484831]">
-              {race.startlist!.map((entry, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+              {race.startlist!.map((entry) => (
+                <div key={entry.riderUrl ?? entry.riderName} className="flex items-center gap-3 px-4 py-2.5">
                   {entry.riderNumber != null && (
                     <span className="text-[#cac8aa] tech-label w-6 text-right shrink-0">
                       {entry.riderNumber}
@@ -604,7 +606,7 @@ export function StageRaceView({
               {race.stagesWinners && race.stagesWinners.length > 0
                 ? race.stagesWinners.map((w, i) => (
                     <div
-                      key={i}
+                      key={`${w.riderUrl}-${w.stageName ?? i}`}
                       className="flex items-center gap-3 px-4 py-2.5"
                     >
                       {w.nationality && (
@@ -622,9 +624,9 @@ export function StageRaceView({
                       </div>
                     </div>
                   ))
-                : race.raceResults!.map((r, i) => (
+                : (race.raceResults ?? []).map((r) => (
                     <div
-                      key={i}
+                      key={r.riderUrl}
                       className="flex items-center gap-3 px-4 py-2.5"
                     >
                       {r.rank != null && (
