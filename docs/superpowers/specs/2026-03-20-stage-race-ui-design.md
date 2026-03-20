@@ -64,25 +64,42 @@ While stage data is loading, show skeleton rows inside each tab content area. Do
 
 ### 1. Fix stage list passthrough (`routers/races.py`)
 
-`_detail_to_race_model` currently sets `"stages": None`. Change to map `detail.stages` into a list of dicts:
+`_detail_to_race_model` currently sets `"stages": None`. Change to map `detail.stages` into the `StageInfo` shape already defined in `models/race.py`:
 
 ```python
 stages = None
 if detail.stages:
-    stages = [
-        {
-            "stage_name": s.stage_name,
-            "stage_url": s.stage_url,
+    import re as _re
+    stages = []
+    for s in detail.stages:
+        # Extract stage number from URL: "race/.../stage-3" → 3
+        m = _re.search(r"stage-(\d+)", s.stage_url)
+        number = int(m.group(1)) if m else 0
+        stages.append({
+            "number": number,
+            "name": s.stage_name,
             "date": s.date,
+            "stage_url": s.stage_url,
             "profile_icon": s.profile_icon,
-        }
-        for s in detail.stages
-    ]
+            # departure/arrival/distance not available from race list page
+            "departure": None,
+            "arrival": None,
+            "distance": None,
+        })
 ```
+
+`StageInfo` (in `models/race.py`) already has all these fields — no new model needed for the race list.
 
 ### 2. New Pydantic model (`scrapers/races_scraper.py`)
 
 ```python
+class GCEntry(BaseModel):
+    rank: Optional[int] = None
+    rider_name: str
+    rider_url: str
+    nationality: Optional[str] = None
+    time: Optional[str] = None   # gap to leader (e.g. "+0:45"), "0:00:00" for leader
+
 class StageFullDetail(BaseModel):
     stage_name: str
     stage_url: str
@@ -94,9 +111,11 @@ class StageFullDetail(BaseModel):
     profile_icon: Optional[str]        # "p0"–"p5"
     vertical_meters: Optional[int]
     won_how: Optional[str]
-    results: List[RaceResultEntry]     # stage finishers
-    gc: List[RaceResultEntry]          # GC standings after stage
+    results: List[RaceResultEntry]     # stage finishers (time = finish time)
+    gc: List[GCEntry]                  # GC standings (time = gap to leader)
 ```
+
+`GCEntry` is separate from `RaceResultEntry` because GC data has no `team_name` and `time` holds a gap string, not a finish time.
 
 ### 3. New scraper function (`scrapers/races_scraper.py`)
 
@@ -112,7 +131,7 @@ Uses `procyclingstats.stage_scraper.Stage`:
 - `.date()`, `.distance()`, `.departure()`, `.arrival()`
 - `.stage_type()`, `.profile_icon()`, `.vertical_meters()`, `.won_how()`
 - `.results("rank", "rider_name", "rider_url", "team_name", "nationality", "time")`
-- `.gc("rank", "rider_name", "rider_url", "team_name", "nationality", "time")`
+- `.gc("rank", "rider_name", "rider_url", "nationality", "time")`  ← no team_name
 
 ### 4. New endpoint (`routers/races.py`)
 
@@ -132,16 +151,28 @@ GET /stage/{stage_url:path}  →  StageFullDetail
 
 Add to `Race`:
 ```typescript
-stages?: StageDetail[] | null;
+stages?: StageInfo[] | null;
 ```
 
 New types:
 ```typescript
-export interface StageDetail {
-  stageName: string;
-  stageUrl: string;
+export interface StageInfo {
+  number: number;
+  name: string;
   date: string | null;
+  stageUrl: string;
+  departure: string | null;
+  arrival: string | null;
+  distance: number | null;
   profileIcon: string | null;
+}
+
+export interface GCEntry {
+  rank: number | null;
+  riderName: string;
+  riderUrl: string;
+  nationality: string | null;
+  time: string | null;   // gap to leader
 }
 
 export interface StageFullDetail {
@@ -156,33 +187,63 @@ export interface StageFullDetail {
   verticalMeters: number | null;
   wonHow: string | null;
   results: RaceResultEntry[];
-  gc: RaceResultEntry[];
+  gc: GCEntry[];
 }
 ```
 
 ### `app/(app)/races/[...slug]/page.tsx`
 
-- Pass `race.stages` and `raceUrl` as props to `StageRaceView`
-- Extract the existing tab JSX into the overall-view section of `StageRaceView`
+- Pass `race.stages`, `raceUrl`, `raceBaseSlug`, `memories`, `communityReviews`, `jwt`, and `writeUrl` as props to `StageRaceView`
+- Server still fetches `memories` and `communityReviews` for the overall view — these are passed as props so the Client Component does not need to re-fetch them for the "Generale" state
+- The existing tab JSX moves into `StageRaceView` as the overall-view branch
 
 ### `components/races/stage-race-view.tsx` (new)
 
 Client component responsibilities:
 1. Render stage selector dropdown (only if `stages` is non-empty)
-2. Track `selectedStageUrl: string | null`
-3. On stage selection: `fetch(`${API_URL}/stage/${stageUrl}`)` → `StageFullDetail`
-4. Render **overall tabs** when `selectedStageUrl === null`
-5. Render **stage tabs** when a stage is selected:
+2. Track `selectedStageUrl: string | null` (null = Generale)
+3. Track `stageData: StageFullDetail | null` and `stageLoading: boolean`
+4. On stage selection: fetch `${API_URL}/stage/${stageUrl}` → `StageFullDetail`
+5. Render **overall tabs** when `selectedStageUrl === null`
+   - Uses server-fetched `memories` and `communityReviews` props (no client re-fetch needed)
+6. Render **stage tabs** when a stage is selected:
    - **INFO**: date, distance, departure, arrival, stage_type, profile_icon, vertical_meters, won_how
    - **TAPPA**: `stageData.results` list (rank, flag, rider name, team, time)
-   - **GC**: `stageData.gc` list (rank, flag, rider name, time delta)
-   - **MEMORIE**: link to `/diary/new?race_url={stageUrl}&race_name={name}&is_stage=true&stage_number={N}`; list of user's diary entries for this stage URL
-   - **COMMUNITY**: public diary entries for this stage URL (fetch `/race/{stageUrl}/community`)
+   - **GC**: `stageData.gc` list (rank, flag, rider name, gap)
+   - **MEMORIE**: fetch `GET /memories/{raceBaseSlug}?is_stage=true&stage_number={N}` client-side; link to `/diary/new?race_url={stageUrl}&race_name={name}&is_stage=true&stage_number={N}`
+   - **COMMUNITY**: fetch `GET /race/{stageUrl}/community` client-side
+
+The stage `raceBaseSlug` for the memories call is the same as the overall race base slug (e.g. `race/volta-a-catalunya`). The `is_stage=true` and `stage_number=N` query params narrow the results to that specific stage. The existing `/memories/{race_base_slug:path}` endpoint already supports these filters (lines 19-34 of `routers/memories.py`).
 
 The "SCRIVI RECENSIONE" button in MEMORIE precompiles the new diary form with:
 - `race_url` = stage URL (e.g. `race/volta-a-catalunya/2026/stage-2`)
 - `race_name` = stage name
-- `is_stage=true`, `stage_number` extracted from stage URL
+- `is_stage=true`, `stage_number=N`
+
+### `app/(app)/diary/new/page.tsx`
+
+Add reading of two new query params:
+```typescript
+const isStage = params.is_stage === "true";
+const stageNumber = params.stage_number ? Number(params.stage_number) : null;
+```
+Pass `isStage` and `stageNumber` as props to `ReviewEditor`.
+
+### `components/diary/review-editor.tsx`
+
+Add to `ReviewEditorProps`:
+```typescript
+isStage?: boolean;
+stageNumber?: number | null;
+```
+
+Include in save payload:
+```typescript
+isStage: isStage ?? false,
+stageNumber: stageNumber ?? null,
+```
+
+`raceBaseSlug` computation (already in the component) correctly produces `race/volta-a-catalunya` from a stage URL via `raceUrl?.replace(/\/\d{4}.*/, "")` — no change needed.
 
 ---
 
@@ -206,12 +267,27 @@ The "SCRIVI RECENSIONE" button in MEMORIE precompiles the new diary form with:
 
 ---
 
+## File Summary
+
+| File | Cambiamento |
+|------|-------------|
+| `backend/scrapers/races_scraper.py` | Aggiunge `GCEntry`, `StageFullDetail`, `fetch_stage_detail()` |
+| `backend/routers/races.py` | Fix `stages: None` → lista `StageInfo`; nuovo endpoint `/stage/{url}` |
+| `frontend/types/api.ts` | Aggiunge `StageInfo`, `GCEntry`, `StageFullDetail`; campo `stages` su `Race` |
+| `frontend/app/(app)/races/[...slug]/page.tsx` | Passa `stages`, `memories`, `communityReviews`, `jwt`, `raceBaseSlug` a `StageRaceView` |
+| `frontend/components/races/stage-race-view.tsx` | **Nuovo** — client component con dropdown + tab condizionali |
+| `frontend/app/(app)/diary/new/page.tsx` | Legge `is_stage` e `stage_number` da searchParams, li passa a `ReviewEditor` |
+| `frontend/components/diary/review-editor.tsx` | Aggiunge props `isStage`, `stageNumber`; li include nel payload di salvataggio |
+
+---
+
 ## What Does NOT Change
 
 - Overall race tabs (INFO · STARTLIST · MEMORIE · COMMUNITY · RISULTATI) — identical to current
 - One-day race page — no dropdown shown, unchanged
 - Diary entry model — already has `is_stage`, `stage_number`, `race_url`
 - Community endpoint — already filters by `race_url`, works with stage URLs
+- `/memories/{base_slug}` endpoint — already supports `is_stage` and `stage_number` filter params
 
 ---
 
