@@ -34,8 +34,13 @@ class CacheService:
             return entry.data
 
         # Cache hit: valid (not expired)
-        if entry and entry.expires_at and entry.expires_at > datetime.now(timezone.utc):
-            return entry.data
+        # SQLite returns naive datetimes; normalise to UTC-aware before comparing.
+        if entry and entry.expires_at:
+            expires_at = entry.expires_at
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            if expires_at > datetime.now(timezone.utc):
+                return entry.data
 
         # Cache miss or stale: scrape fresh data
         logger.info(f"Cache miss for {cache_key}, scraping...")

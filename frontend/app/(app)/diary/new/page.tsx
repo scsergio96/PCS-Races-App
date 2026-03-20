@@ -8,6 +8,8 @@ export default async function NewDiaryPage({
   const params = await searchParams;
   const raceUrl = params.race_url;
   const raceName = params.race_name;
+  const isStage = params.is_stage === "true";
+  const stageNumber = params.stage_number ? Number(params.stage_number) : null;
 
   return (
     <div className="max-w-2xl mx-auto pb-8">
@@ -32,7 +34,7 @@ export default async function NewDiaryPage({
       </div>
 
       <div className="px-4 pt-6">
-        <ReviewEditor raceUrl={raceUrl} raceName={raceName} />
+        <ReviewEditor raceUrl={raceUrl} raceName={raceName} isStage={isStage} stageNumber={stageNumber} />
       </div>
     </div>
   );

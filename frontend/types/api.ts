@@ -33,6 +33,40 @@ export interface RaceInfo {
   avgSpeed: string | null;
 }
 
+export interface StageInfo {
+  number: number;
+  name: string;
+  date: string | null;
+  stageUrl: string;
+  departure: string | null;
+  arrival: string | null;
+  distance: number | null;
+  profileIcon: string | null;
+}
+
+export interface GCEntry {
+  rank: number | null;
+  riderName: string;
+  riderUrl: string;
+  nationality: string | null;
+  time: string | null; // gap to leader, e.g. "+0:45"
+}
+
+export interface StageFullDetail {
+  stageName: string;
+  stageUrl: string;
+  date: string | null;
+  distance: number | null;
+  departure: string | null;
+  arrival: string | null;
+  stageType: string | null;
+  profileIcon: string | null;
+  verticalMeters: number | null;
+  wonHow: string | null;
+  results: RaceResultEntry[];
+  gc: GCEntry[];
+}
+
 export interface Race {
   name: string;
   raceUrl: string;
@@ -44,6 +78,7 @@ export interface Race {
   nation: string | null;
   startlistUrl: string | null;
   isFuture: boolean;
+  stages?: StageInfo[] | null;
   startlist?: StartlistEntry[] | null;
   stagesWinners?: StageWinner[] | null;
   raceResults?: RaceResultEntry[] | null;
