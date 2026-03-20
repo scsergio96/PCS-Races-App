@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.database import get_db
 from models.race import RaceModel
-from scrapers.races_scraper import fetch_races, fetch_race_detail, RaceDetailModel
+from scrapers.races_scraper import fetch_races, fetch_race_detail, fetch_stage_detail, RaceDetailModel, StageFullDetail
 from services.cache import CacheService
 
 router = APIRouter()
@@ -97,6 +97,28 @@ async def get_races(
     return all_races
 
 
+def _map_stages(raw_stages):
+    """Map List[StageDetail] from scraper → List[StageInfo] dict for RaceModel."""
+    import re
+    if not raw_stages:
+        return None
+    result = []
+    for s in raw_stages:
+        m = re.search(r"stage-(\d+)", s.stage_url)
+        number = int(m.group(1)) if m else 0
+        result.append({
+            "number": number,
+            "name": s.stage_name,
+            "date": s.date,
+            "stage_url": s.stage_url,
+            "profile_icon": s.profile_icon,
+            "departure": None,
+            "arrival": None,
+            "distance": None,
+        })
+    return result
+
+
 def _detail_to_race_model(race_url: str, detail: RaceDetailModel) -> dict:
     """Map RaceDetailModel fields → RaceModel fields for the frontend."""
     year = detail.year
@@ -179,7 +201,7 @@ def _detail_to_race_model(race_url: str, detail: RaceDetailModel) -> dict:
         "nation": detail.nationality,
         "startlist_url": startlist_url,
         "is_future": is_future,
-        "stages": None,
+        "stages": _map_stages(detail.stages),
         "startlist": startlist,
         "stages_winners": stages_winners,
         "race_results": race_results,
@@ -227,6 +249,42 @@ async def get_race_detail(
         ttl=ttl,
         data_type="race_detail",
         source_url=f"pcs/{pcs_race_url}",
+        is_immutable=is_past,
+    )
+    return data
+
+
+@router.get("/stage/{stage_url:path}", response_model=StageFullDetail)
+async def get_stage_detail(
+    stage_url: str,
+    db: AsyncSession = Depends(get_db),
+):
+    cache = CacheService(db)
+    cache_key = f"stage_detail:{stage_url}"
+
+    year = CURRENT_YEAR
+    try:
+        year = int(stage_url.rstrip("/").split("/")[-2])  # .../2026/stage-1 → 2026
+    except (ValueError, IndexError):
+        pass
+
+    is_past = year < CURRENT_YEAR
+    ttl = timedelta(days=365 * 10) if is_past else timedelta(hours=1)
+
+    async def _scrape():
+        try:
+            import asyncio
+            detail = await asyncio.to_thread(fetch_stage_detail, stage_url)
+            return detail.model_dump()
+        except Exception as e:
+            raise HTTPException(404, f"Stage not found: {e}")
+
+    data = await cache.get(
+        cache_key,
+        scrape_fn=_scrape,
+        ttl=ttl,
+        data_type="stage_detail",
+        source_url=f"pcs/{stage_url}",
         is_immutable=is_past,
     )
     return data
