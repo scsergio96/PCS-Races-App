@@ -1,61 +1,84 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import type { Race } from "@/types/api";
 
 const NATION_FLAGS: Record<string, string> = {
   IT: "🇮🇹", FR: "🇫🇷", ES: "🇪🇸", BE: "🇧🇪", NL: "🇳🇱",
   DE: "🇩🇪", CH: "🇨🇭", GB: "🇬🇧", US: "🇺🇸", AU: "🇦🇺",
   AT: "🇦🇹", PT: "🇵🇹", DK: "🇩🇰", NO: "🇳🇴", SE: "🇸🇪",
+  PL: "🇵🇱", SI: "🇸🇮", CO: "🇨🇴", CA: "🇨🇦", JP: "🇯🇵",
 };
 
 function formatDate(start: string, end: string | null): string {
+  const pad = (d: Date) =>
+    `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
   const s = new Date(start);
-  const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
-  if (!end || start === end) return s.toLocaleDateString("it-IT", opts);
+  if (!end || start === end) return pad(s);
   const e = new Date(end);
-  return `${s.toLocaleDateString("it-IT", opts)} \u2013 ${e.toLocaleDateString("it-IT", opts)}`;
+  return `${pad(s)} → ${pad(e)}`;
 }
 
 interface RaceCardProps {
   race: Race;
-  reviewed?: boolean;
+  striped?: boolean;
 }
 
-export function RaceCard({ race, reviewed }: RaceCardProps) {
+export function RaceCard({ race, striped = false }: RaceCardProps) {
   const flag = NATION_FLAGS[race.nation ?? ""] ?? "🏁";
-  // Strip "race/" prefix from the raceUrl to build the Next.js route
   const slug = race.raceUrl.replace(/^race\//, "");
+  const isMen = race.gender === "ME";
+  const isWomen = race.gender === "WE";
 
   return (
     <Link href={`/races/${slug}`}>
-      <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-4 hover:border-zinc-600 transition-colors cursor-pointer">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-zinc-50 truncate">{race.name}</p>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              {flag} {formatDate(race.startDate ?? "", race.endDate)}
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            {race.uciClass && (
-              <Badge
-                variant="outline"
-                className="text-[10px] border-zinc-700 text-zinc-400"
-              >
-                {race.uciClass}
-              </Badge>
-            )}
-            {reviewed && (
-              <Badge className="text-[10px] bg-emerald-500/20 text-emerald-400 border-0">
-                Recensita
-              </Badge>
-            )}
+      <div
+        className={cn(
+          "p-4 hover:bg-[#ffff00]/10 transition-colors",
+          striped ? "bg-[#ffff00]/5" : "bg-transparent"
+        )}
+      >
+        {/* Date row */}
+        <div className="flex justify-between items-start mb-2">
+          <span className="flex items-center gap-1 text-[#ffff00] font-bold text-sm">
+            {formatDate(race.startDate ?? "", race.endDate)}
+          </span>
+          <div className="flex gap-1">
             {race.isFuture && (
-              <Badge className="text-[10px] bg-[#E91E8C]/20 text-[#E91E8C] border-0">
-                In arrivo
-              </Badge>
+              <span className="bg-green-600 text-white tech-label px-2 py-0.5">
+                Upcoming
+              </span>
+            )}
+            {isMen && (
+              <span className="bg-blue-600 text-white tech-label px-2 py-0.5">
+                Men Elite
+              </span>
+            )}
+            {isWomen && (
+              <span className="bg-pink-600 text-white tech-label px-2 py-0.5">
+                Women Elite
+              </span>
             )}
           </div>
+        </div>
+
+        {/* Flag + Name */}
+        <div className="flex items-center gap-3 mb-3">
+          <span className="text-2xl">{flag}</span>
+          <h3 className="kinetic-italic text-xl leading-tight">{race.name}</h3>
+        </div>
+
+        {/* UCI class + CTA */}
+        <div className="flex items-center justify-between">
+          <div className="flex gap-2">
+            {race.uciClass && (
+              <span className="border border-[#484831] text-[#cac8aa] tech-label px-2 py-0.5">
+                UCI Class: {race.uciClass}
+              </span>
+            )}
+          </div>
+          <span className="flex items-center gap-0.5 text-[#ffff00] tech-label hover:underline">
+            VIEW DETAILS →
+          </span>
         </div>
       </div>
     </Link>

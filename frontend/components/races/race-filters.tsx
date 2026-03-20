@@ -8,6 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SlidersHorizontal } from "lucide-react";
+import { useState } from "react";
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
@@ -15,6 +17,7 @@ const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 export function RaceFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [open, setOpen] = useState(false);
 
   function setParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -26,53 +29,69 @@ export function RaceFilters() {
     router.push(`/races?${params.toString()}`);
   }
 
+  const yearValue: string = searchParams.get("year") ?? String(currentYear);
+  const levelValue: string = searchParams.get("level") ?? "all";
+  const genderValue: string = searchParams.get("gender") ?? "all";
+
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
-      <Select
-        defaultValue={searchParams.get("year") ?? String(currentYear)}
-        onValueChange={(v) => setParam("year", String(v))}
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-center gap-2 bg-[#ffff00] text-black font-black py-3 tech-label text-sm hover:bg-[#cdcd00] transition-colors"
       >
-        <SelectTrigger className="shrink-0 bg-zinc-900 border-zinc-700 text-sm h-8 min-w-[90px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="bg-zinc-900 border-zinc-700">
-          {years.map((y) => (
-            <SelectItem key={y} value={String(y)}>
-              {y}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        <SlidersHorizontal className="w-4 h-4" />
+        FILTER RACES
+      </button>
 
-      <Select
-        defaultValue={searchParams.get("level") ?? "all"}
-        onValueChange={(v) => setParam("level", String(v))}
-      >
-        <SelectTrigger className="shrink-0 bg-zinc-900 border-zinc-700 text-sm h-8 min-w-[100px]">
-          <SelectValue placeholder="Livello" />
-        </SelectTrigger>
-        <SelectContent className="bg-zinc-900 border-zinc-700">
-          <SelectItem value="all">Tutti i livelli</SelectItem>
-          <SelectItem value="1">UCI 1</SelectItem>
-          <SelectItem value="2">UCI 2</SelectItem>
-          <SelectItem value="3">UCI 3</SelectItem>
-          <SelectItem value="4">UCI 4</SelectItem>
-        </SelectContent>
-      </Select>
+      {open && (
+        <div className="flex flex-wrap gap-2 mt-2 p-3 bg-[#2b2b1d] border border-[#484831]">
+          <Select
+            defaultValue={yearValue}
+            onValueChange={(v) => { if (v !== null) setParam("year", v); }}
+          >
+            <SelectTrigger className="shrink-0 bg-[#2b2b1d] border-[#484831] text-[#f8f8f5] text-sm h-8 min-w-[90px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#202013] border-[#484831]">
+              {years.map((y) => (
+                <SelectItem key={y} value={String(y)} className="text-[#f8f8f5]">
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      <Select
-        defaultValue={searchParams.get("gender") ?? "all"}
-        onValueChange={(v) => setParam("gender", String(v))}
-      >
-        <SelectTrigger className="shrink-0 bg-zinc-900 border-zinc-700 text-sm h-8 min-w-[90px]">
-          <SelectValue placeholder="Genere" />
-        </SelectTrigger>
-        <SelectContent className="bg-zinc-900 border-zinc-700">
-          <SelectItem value="all">Tutti</SelectItem>
-          <SelectItem value="ME">Elite Uomini</SelectItem>
-          <SelectItem value="WE">Elite Donne</SelectItem>
-        </SelectContent>
-      </Select>
+          <Select
+            defaultValue={levelValue}
+            onValueChange={(v) => { if (v !== null) setParam("level", v); }}
+          >
+            <SelectTrigger className="shrink-0 bg-[#2b2b1d] border-[#484831] text-[#f8f8f5] text-sm h-8 min-w-[100px]">
+              <SelectValue placeholder="Livello" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#202013] border-[#484831]">
+              <SelectItem value="all" className="text-[#f8f8f5]">Tutti i livelli</SelectItem>
+              <SelectItem value="1" className="text-[#f8f8f5]">UCI 1</SelectItem>
+              <SelectItem value="2" className="text-[#f8f8f5]">UCI 2</SelectItem>
+              <SelectItem value="3" className="text-[#f8f8f5]">UCI 3</SelectItem>
+              <SelectItem value="4" className="text-[#f8f8f5]">UCI 4</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            defaultValue={genderValue}
+            onValueChange={(v) => { if (v !== null) setParam("gender", v); }}
+          >
+            <SelectTrigger className="shrink-0 bg-[#2b2b1d] border-[#484831] text-[#f8f8f5] text-sm h-8 min-w-[90px]">
+              <SelectValue placeholder="Genere" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#202013] border-[#484831]">
+              <SelectItem value="all" className="text-[#f8f8f5]">Tutti</SelectItem>
+              <SelectItem value="ME" className="text-[#f8f8f5]">Elite Uomini</SelectItem>
+              <SelectItem value="WE" className="text-[#f8f8f5]">Elite Donne</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,7 +8,6 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Mention from "@tiptap/extension-mention";
 import { apiFetch } from "@/lib/api";
 import { StarRating } from "@/components/diary/star-rating";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -40,7 +39,7 @@ export function ReviewEditor({ raceUrl, raceName, existing }: ReviewEditorProps)
           "Racconta la tua esperienza con questa gara... (usa @ per menzionare un corridore)",
       }),
       Mention.configure({
-        HTMLAttributes: { class: "text-[#E91E8C] font-medium" },
+        HTMLAttributes: { class: "text-[#ffff00] font-medium" },
         suggestion: {
           items: async ({ query }: { query: string }) => {
             return ["Tadej Pogacar", "Jonas Vingegaard", "Remco Evenepoel"]
@@ -57,12 +56,12 @@ export function ReviewEditor({ raceUrl, raceName, existing }: ReviewEditorProps)
               }) => {
                 element = document.createElement("ul");
                 element.className =
-                  "fixed z-50 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl text-sm overflow-hidden";
+                  "fixed z-50 bg-[#202013] border border-[#484831] shadow-xl text-sm overflow-hidden";
                 props.items.forEach((item) => {
                   const li = document.createElement("li");
                   li.textContent = item;
                   li.className =
-                    "px-3 py-2 cursor-pointer hover:bg-zinc-800 text-zinc-200";
+                    "px-3 py-2 cursor-pointer hover:bg-[#2b2b1d] text-[#f8f8f5]";
                   li.addEventListener("click", () =>
                     props.command({ id: item, label: item })
                   );
@@ -85,7 +84,7 @@ export function ReviewEditor({ raceUrl, raceName, existing }: ReviewEditorProps)
                   const li = document.createElement("li");
                   li.textContent = item;
                   li.className =
-                    "px-3 py-2 cursor-pointer hover:bg-zinc-800 text-zinc-200";
+                    "px-3 py-2 cursor-pointer hover:bg-[#2b2b1d] text-[#f8f8f5]";
                   li.addEventListener("click", () =>
                     props.command({ id: item, label: item })
                   );
@@ -183,14 +182,14 @@ export function ReviewEditor({ raceUrl, raceName, existing }: ReviewEditorProps)
     <div className="space-y-6">
       {/* Race context */}
       {raceName && (
-        <div className="bg-zinc-900 rounded-xl p-3 text-sm text-zinc-300">
+        <div className="bg-[#202013] border border-[#484831] p-3 text-sm text-[#cac8aa]">
           &#128205; {raceName}
         </div>
       )}
 
       {/* Rating */}
       <div className="space-y-1">
-        <Label className="text-zinc-400 text-xs uppercase tracking-wider">
+        <Label className="tech-label text-[9px] text-[#cac8aa]">
           Valutazione
         </Label>
         <StarRating value={rating} onChange={setRating} size="lg" />
@@ -198,22 +197,22 @@ export function ReviewEditor({ raceUrl, raceName, existing }: ReviewEditorProps)
 
       {/* Body — Tiptap */}
       <div className="space-y-1">
-        <Label className="text-zinc-400 text-xs uppercase tracking-wider">
+        <Label className="tech-label text-[9px] text-[#cac8aa]">
           Recensione
         </Label>
-        <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4 focus-within:border-[#E91E8C] transition-colors">
+        <div className="bg-[#202013] border border-[#484831] p-4 focus-within:border-[#ffff00] transition-colors">
           <EditorContent editor={editor} />
         </div>
       </div>
 
       {/* Optional structured fields */}
       <details className="space-y-3">
-        <summary className="text-xs uppercase tracking-wider text-zinc-500 cursor-pointer select-none">
+        <summary className="tech-label text-[#cac8aa] cursor-pointer select-none">
           Campi aggiuntivi (opzionale)
         </summary>
         <div className="space-y-4 pt-2">
           <div className="space-y-1">
-            <Label htmlFor="keyMoment" className="text-zinc-400 text-xs">
+            <Label htmlFor="keyMoment" className="tech-label text-[9px] text-[#cac8aa]">
               Momento chiave
             </Label>
             <Input
@@ -221,11 +220,11 @@ export function ReviewEditor({ raceUrl, raceName, existing }: ReviewEditorProps)
               value={keyMoment}
               onChange={(e) => setKeyMoment(e.target.value)}
               placeholder="es. L'attacco di Pogacar sul Mont Ventoux"
-              className="bg-zinc-900 border-zinc-700"
+              className="bg-[#202013] border-[#484831]"
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="protagonist" className="text-zinc-400 text-xs">
+            <Label htmlFor="protagonist" className="tech-label text-[9px] text-[#cac8aa]">
               Protagonista
             </Label>
             <Input
@@ -233,31 +232,43 @@ export function ReviewEditor({ raceUrl, raceName, existing }: ReviewEditorProps)
               value={protagonist}
               onChange={(e) => setProtagonist(e.target.value)}
               placeholder="es. Tadej Pogacar"
-              className="bg-zinc-900 border-zinc-700"
+              className="bg-[#202013] border-[#484831]"
             />
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="emotion" className="text-zinc-400 text-xs">
-              Emozione dominante
+          {/* Dominant emotion chips */}
+          <div>
+            <Label className="tech-label text-[9px] text-[#cac8aa] block mb-2">
+              EMOZIONE DOMINANTE
             </Label>
-            <Input
-              id="emotion"
-              value={dominantEmotion}
-              onChange={(e) => setDominantEmotion(e.target.value)}
-              placeholder="es. entusiasmo"
-              className="bg-zinc-900 border-zinc-700"
-            />
+            <div className="flex flex-wrap gap-2">
+              {["Adrenalina", "Tensione", "Sorpresa", "Fatica", "Gioia", "Tristezza"].map((emotion) => (
+                <button
+                  key={emotion}
+                  type="button"
+                  onClick={() =>
+                    setDominantEmotion(dominantEmotion === emotion ? "" : emotion)
+                  }
+                  className={`px-3 py-1 tech-label text-[9px] border transition-colors ${
+                    dominantEmotion === emotion
+                      ? "border-[#ffff00] text-[#ffff00] bg-[#ffff00]/10"
+                      : "border-[#484831] text-[#cac8aa] hover:border-[#ffff00]/50"
+                  }`}
+                >
+                  {emotion.toUpperCase()}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </details>
 
       {/* Public toggle */}
-      <div className="flex items-center justify-between bg-zinc-900 rounded-xl p-4">
+      <div className="flex items-center justify-between bg-[#202013] border border-[#484831] p-4">
         <div>
-          <p className="text-sm font-medium text-zinc-50">
+          <p className="text-sm font-medium text-[#f8f8f5]">
             Condividi con la community
           </p>
-          <p className="text-xs text-zinc-500 mt-0.5">
+          <p className="text-xs text-[#cac8aa] mt-0.5">
             La tua recensione sar&agrave; visibile agli altri utenti
           </p>
         </div>
@@ -268,17 +279,14 @@ export function ReviewEditor({ raceUrl, raceName, existing }: ReviewEditorProps)
       </div>
 
       {/* Save button */}
-      <Button
+      <button
+        type="button"
         onClick={handleSave}
-        disabled={saving}
-        className="w-full bg-[#E91E8C] hover:bg-[#c4186f] text-white"
+        disabled={saving || !rating}
+        className="w-full bg-[#ffff00] text-black py-4 kinetic-italic text-xl disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#cdcd00] transition-colors flex items-center justify-center gap-2"
       >
-        {saving
-          ? "Salvataggio..."
-          : existing
-          ? "Aggiorna recensione"
-          : "Salva recensione"}
-      </Button>
+        {saving ? "SALVATAGGIO..." : "SALVA RECENSIONE →"}
+      </button>
     </div>
   );
 }

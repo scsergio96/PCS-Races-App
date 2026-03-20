@@ -4,13 +4,13 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#09090b] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#1a1a0a] px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-zinc-50">
-            Cycle<span className="text-[#E91E8C]">Tracker</span>
+          <h1 className="text-2xl font-bold text-[#f8f8f5]">
+            CYCLE<span className="kinetic-italic text-[#ffff00]">TRACKER</span>
           </h1>
-          <p className="text-zinc-400 text-sm mt-1">
+          <p className="text-[#cac8aa] text-sm mt-1">
             Il tuo diario ciclistico personale
           </p>
         </div>

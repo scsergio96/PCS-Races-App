@@ -31,6 +31,7 @@ export interface DiaryEntry {
   shareToken: string | null;
   likeCount: number;
   commentCount: number;
+  authorName?: string;   // populated by /community/feed endpoint
   createdAt: string;
   updatedAt: string | null;
 }

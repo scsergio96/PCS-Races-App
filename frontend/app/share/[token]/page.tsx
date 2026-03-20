@@ -49,12 +49,12 @@ export default async function SharePage({
   const entry: ShareEntry = await res.json();
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-50">
+    <div className="min-h-screen bg-[#09090b] text-[#f8f8f5]">
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         {/* Branding */}
         <div className="text-center mb-8">
           <span className="text-lg font-bold">
-            Cycle<span className="text-[#E91E8C]">Tracker</span>
+            Cycle<span className="text-[#ffff00]">Tracker</span>
           </span>
         </div>
 
@@ -62,12 +62,12 @@ export default async function SharePage({
         <div>
           <Badge
             variant="outline"
-            className="border-zinc-700 text-zinc-400 text-xs mb-3"
+            className="border-[#484831] text-[#cac8aa] text-xs mb-3"
           >
             Recensione pubblica
           </Badge>
-          <h1 className="text-2xl font-bold text-zinc-50">{entry.raceName}</h1>
-          <p className="text-zinc-400 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-[#f8f8f5]">{entry.raceName}</h1>
+          <p className="text-[#cac8aa] text-sm mt-1">
             {entry.raceYear}
             {entry.authorDisplayName && ` · di ${entry.authorDisplayName}`}
           </p>
@@ -80,48 +80,48 @@ export default async function SharePage({
 
         {/* Body */}
         <div
-          className="text-zinc-200 text-base leading-relaxed prose prose-invert prose-sm max-w-none"
+          className="text-[#f8f8f5] text-base leading-relaxed prose prose-invert prose-sm max-w-none"
           dangerouslySetInnerHTML={{ __html: entry.body }}
         />
 
         {/* Structured fields */}
         {(entry.keyMoment || entry.protagonist || entry.dominantEmotion) && (
-          <div className="bg-zinc-900 rounded-xl p-4 space-y-2 text-sm">
+          <div className="bg-[#202013] rounded-none p-4 space-y-2 text-sm">
             {entry.keyMoment && (
               <div>
-                <span className="text-zinc-500 text-xs uppercase tracking-wider">
+                <span className="text-[#cac8aa] text-xs uppercase tracking-wider">
                   Momento chiave
                 </span>
-                <p className="text-zinc-300 mt-0.5">{entry.keyMoment}</p>
+                <p className="text-[#f8f8f5] mt-0.5">{entry.keyMoment}</p>
               </div>
             )}
             {entry.protagonist && (
               <div>
-                <span className="text-zinc-500 text-xs uppercase tracking-wider">
+                <span className="text-[#cac8aa] text-xs uppercase tracking-wider">
                   Protagonista
                 </span>
-                <p className="text-zinc-300 mt-0.5">{entry.protagonist}</p>
+                <p className="text-[#f8f8f5] mt-0.5">{entry.protagonist}</p>
               </div>
             )}
             {entry.dominantEmotion && (
               <div>
-                <span className="text-zinc-500 text-xs uppercase tracking-wider">
+                <span className="text-[#cac8aa] text-xs uppercase tracking-wider">
                   Emozione
                 </span>
-                <p className="text-zinc-300 mt-0.5">{entry.dominantEmotion}</p>
+                <p className="text-[#f8f8f5] mt-0.5">{entry.dominantEmotion}</p>
               </div>
             )}
           </div>
         )}
 
         {/* CTA */}
-        <div className="border-t border-zinc-800 pt-6 text-center">
-          <p className="text-zinc-500 text-sm mb-3">
+        <div className="border-t border-[#484831] pt-6 text-center">
+          <p className="text-[#cac8aa] text-sm mb-3">
             Tieni un diario delle tue gare preferite
           </p>
           <a
             href="/signup"
-            className="inline-block bg-[#E91E8C] hover:bg-[#c4186f] text-white text-sm font-medium px-6 py-2 rounded-lg transition-colors"
+            className="inline-block bg-[#ffff00] hover:bg-[#cdcd00] text-[#202013] text-sm font-medium px-6 py-2 rounded-none transition-colors"
           >
             Inizia gratis →
           </a>
