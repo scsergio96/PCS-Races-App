@@ -224,7 +224,7 @@ export default async function RaceDetailPage({
                       </span>
                       {m.rating !== null && (
                         <span className="text-[#ffff00] text-sm">
-                          {"&#9733;".repeat(m.rating)}
+                          {"★".repeat(m.rating)}
                         </span>
                       )}
                     </div>
