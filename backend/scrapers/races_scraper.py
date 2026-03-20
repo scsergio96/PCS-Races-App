@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from pydantic import BaseModel
 from typing import Optional, List
 
+from models.base import CamelModel
 from models.race import RaceModel
 
 
@@ -40,7 +41,7 @@ class StartlistEntry(BaseModel):
     rider_number: Optional[int] = None
 
 
-class RaceResultEntry(BaseModel):
+class RaceResultEntry(CamelModel):
     rank: Optional[int] = None
     rider_name: str
     rider_url: str
@@ -59,7 +60,7 @@ class RaceInfo(BaseModel):
     avg_speed: Optional[str] = None
 
 
-class GCEntry(BaseModel):
+class GCEntry(CamelModel):
     rank: Optional[int] = None
     rider_name: str
     rider_url: str
@@ -67,7 +68,7 @@ class GCEntry(BaseModel):
     time: Optional[str] = None  # gap to leader, e.g. "+0:45"; "0:00:00" for the leader
 
 
-class StageFullDetail(BaseModel):
+class StageFullDetail(CamelModel):
     stage_name: str
     stage_url: str
     date: Optional[str] = None

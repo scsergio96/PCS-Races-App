@@ -52,12 +52,12 @@ async def test_get_stage_detail_returns_200(async_client: AsyncClient):
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data["stage_url"] == "race/volta-a-catalunya/2026/stage-2"
+    assert data["stageUrl"] == "race/volta-a-catalunya/2026/stage-2"
     assert data["distance"] == 178.2
     assert data["departure"] == "Girona"
     assert data["arrival"] == "Olot"
     assert len(data["results"]) == 1
-    assert data["results"][0]["rider_name"] == "POGACAR Tadej"
+    assert data["results"][0]["riderName"] == "POGACAR Tadej"
     assert len(data["gc"]) == 1
     assert data["gc"][0]["time"] == "0:00:00"
 
