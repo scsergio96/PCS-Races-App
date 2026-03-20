@@ -103,9 +103,9 @@ def _map_stages(raw_stages):
     if not raw_stages:
         return None
     result = []
-    for s in raw_stages:
+    for idx, s in enumerate(raw_stages, start=1):
         m = re.search(r"stage-(\d+)", s.stage_url)
-        number = int(m.group(1)) if m else 0
+        number = int(m.group(1)) if m else idx
         result.append({
             "number": number,
             "name": s.stage_name,
