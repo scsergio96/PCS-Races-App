@@ -41,33 +41,42 @@ export default async function RacesPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Next.js 16: searchParams is a Promise — must await
   const params = await searchParams;
+  const year =
+    typeof params.year === "string"
+      ? params.year
+      : String(new Date().getFullYear());
   const races = await fetchRaces(params);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 pt-6 pb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-zinc-50">Calendario Gare</h1>
-      </div>
-
-      <div className="mb-4">
-        <Suspense fallback={<Skeleton className="h-8 w-full" />}>
+    <div className="max-w-2xl mx-auto pb-8">
+      {/* Header */}
+      <div className="p-4 bg-[#202013]">
+        <div className="flex items-end justify-between mb-4">
+          <div>
+            <p className="tech-label text-[#ffff00] mb-1">World Tour {year}</p>
+            <h2 className="kinetic-italic text-3xl text-[#f8f8f5]">
+              {races.length} Races Found
+            </h2>
+          </div>
+        </div>
+        <Suspense fallback={<Skeleton className="h-11 w-full bg-[#2b2b1d]" />}>
           <RaceFilters />
         </Suspense>
       </div>
 
+      {/* Race list */}
       {races.length === 0 ? (
-        <div className="text-center py-16 text-zinc-500">
-          <p>Nessuna gara trovata.</p>
-          <p className="text-xs mt-1">
+        <div className="text-center py-16 text-[#cac8aa]">
+          <p className="tech-label">Nessuna gara trovata.</p>
+          <p className="text-xs mt-1 text-[#484831]">
             Prova a cambiare i filtri o controlla che il backend sia avviato.
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {races.map((race) => (
-            <RaceCard key={race.raceUrl} race={race} />
+        <div className="divide-y divide-[#484831]">
+          {races.map((race, i) => (
+            <RaceCard key={race.raceUrl} race={race} striped={i % 2 === 0} />
           ))}
         </div>
       )}
