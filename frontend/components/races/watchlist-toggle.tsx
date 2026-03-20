@@ -12,6 +12,7 @@ interface WatchlistToggleProps {
   raceName: string;
   raceDate: string | null;
   initialItemId: string | null;
+  compact?: boolean;
 }
 
 export function WatchlistToggle({
@@ -19,6 +20,7 @@ export function WatchlistToggle({
   raceName,
   raceDate,
   initialItemId,
+  compact = false,
 }: WatchlistToggleProps) {
   const [itemId, setItemId] = useState<string | null>(initialItemId);
   const [loading, setLoading] = useState(false);
@@ -79,6 +81,29 @@ export function WatchlistToggle({
     } finally {
       setLoading(false);
     }
+  }
+
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={loading}
+        title={inWatchlist ? "Rimuovi dalla watchlist" : "Aggiungi alla watchlist"}
+        className={`flex items-center gap-1.5 px-3 py-1.5 tech-label transition-colors disabled:opacity-50 ${
+          inWatchlist
+            ? "border border-[#ffff00] text-[#ffff00] hover:bg-[#ffff00]/10"
+            : "border border-[#484831] text-[#cac8aa] hover:border-[#ffff00]/50"
+        }`}
+      >
+        {inWatchlist ? (
+          <BookmarkCheck className="w-4 h-4" />
+        ) : (
+          <Bookmark className="w-4 h-4" />
+        )}
+        {inWatchlist ? "SAVED" : "WATCHLIST"}
+      </button>
+    );
   }
 
   return (

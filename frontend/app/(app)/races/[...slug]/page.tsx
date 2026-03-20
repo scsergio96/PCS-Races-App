@@ -3,8 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WatchlistToggle } from "@/components/races/watchlist-toggle";
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
-import type { Race, DiaryEntry, WatchlistItem } from "@/types/api";
+import type { Race, DiaryEntry, WatchlistItem, RaceInfo } from "@/types/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -70,7 +69,6 @@ export default async function RaceDetailPage({
 }: {
   params: Promise<{ slug: string[] }>;
 }) {
-  // Next.js 16: params is a Promise — must await
   const { slug } = await params;
   const raceUrl = `race/${slug.join("/")}`;
   const raceBaseSlug = `race/${slug[0]}`;
@@ -91,6 +89,11 @@ export default async function RaceDetailPage({
   if (!race) notFound();
 
   const writeUrl = `/diary/new?race_url=${encodeURIComponent(raceUrl)}&race_name=${encodeURIComponent(race.name)}`;
+  const hasStartlist = race.startlist && race.startlist.length > 0;
+  const hasResults =
+    !race.isFuture &&
+    ((race.stagesWinners && race.stagesWinners.length > 0) ||
+      (race.raceResults && race.raceResults.length > 0));
 
   return (
     <div className="max-w-2xl mx-auto pb-8">
@@ -101,9 +104,27 @@ export default async function RaceDetailPage({
           <span className="inline-block bg-[#ffff00] text-black tech-label px-2 py-0.5 mb-2">
             {race.uciClass ?? "UCI"}
           </span>
-          <h1 className="kinetic-italic text-3xl text-[#f8f8f5] leading-none">
-            {race.name}
-          </h1>
+          <div className="flex items-end justify-between gap-2">
+            <h1 className="kinetic-italic text-3xl text-[#f8f8f5] leading-none">
+              {race.name}
+            </h1>
+            {jwt ? (
+              <WatchlistToggle
+                raceUrl={raceUrl}
+                raceName={race.name}
+                raceDate={race.startDate}
+                initialItemId={watchlistItem?.id ?? null}
+                compact
+              />
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center gap-1.5 px-3 py-1.5 tech-label border border-[#484831] text-[#cac8aa] hover:border-[#ffff00]/50 transition-colors"
+              >
+                WATCHLIST
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
@@ -130,30 +151,23 @@ export default async function RaceDetailPage({
       {/* Tabs */}
       <Tabs defaultValue="info">
         <TabsList className="w-full bg-transparent border-b border-[#484831] rounded-none h-auto px-4">
-          <TabsTrigger
-            value="info"
-            className="tech-label rounded-none border-b-2 border-transparent data-[state=active]:border-[#ffff00] data-[state=active]:text-[#ffff00] pb-2 pt-3"
-          >
-            INFO
-          </TabsTrigger>
-          <TabsTrigger
-            value="memories"
-            className="tech-label rounded-none border-b-2 border-transparent data-[state=active]:border-[#ffff00] data-[state=active]:text-[#ffff00] pb-2 pt-3"
-          >
-            MEMORIE
-          </TabsTrigger>
-          <TabsTrigger
-            value="community"
-            className="tech-label rounded-none border-b-2 border-transparent data-[state=active]:border-[#ffff00] data-[state=active]:text-[#ffff00] pb-2 pt-3"
-          >
-            COMMUNITY
-          </TabsTrigger>
-          <TabsTrigger
-            value="watchlist"
-            className="tech-label rounded-none border-b-2 border-transparent data-[state=active]:border-[#ffff00] data-[state=active]:text-[#ffff00] pb-2 pt-3"
-          >
-            WATCHLIST
-          </TabsTrigger>
+          {(["info", "startlist", "memorie", "community"] as const).map((tab) => (
+            <TabsTrigger
+              key={tab}
+              value={tab}
+              className="tech-label rounded-none border-b-2 border-transparent data-[state=active]:border-[#ffff00] data-[state=active]:text-[#ffff00] pb-2 pt-3"
+            >
+              {tab.toUpperCase()}
+            </TabsTrigger>
+          ))}
+          {hasResults && (
+            <TabsTrigger
+              value="risultati"
+              className="tech-label rounded-none border-b-2 border-transparent data-[state=active]:border-[#ffff00] data-[state=active]:text-[#ffff00] pb-2 pt-3"
+            >
+              RISULTATI
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Info tab */}
@@ -187,18 +201,40 @@ export default async function RaceDetailPage({
                 <span className="text-[#f8f8f5]">{race.endDate}</span>
               </div>
             )}
-            {race.startlistUrl && (
-              <div className="flex justify-between items-center pt-1 border-t border-[#484831]">
-                <span className="text-[#cac8aa]">Startlist</span>
-                <a
-                  href={race.startlistUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[#cac8aa] hover:text-[#f8f8f5] transition-colors text-xs"
-                >
-                  ProCyclingStats
-                  <ExternalLink className="w-3 h-3" />
-                </a>
+            {race.raceInfo?.distance && (
+              <div className="flex justify-between">
+                <span className="text-[#cac8aa]">Distanza</span>
+                <span className="text-[#f8f8f5]">{race.raceInfo.distance}</span>
+              </div>
+            )}
+            {race.raceInfo?.departure && (
+              <div className="flex justify-between">
+                <span className="text-[#cac8aa]">Partenza</span>
+                <span className="text-[#f8f8f5]">{race.raceInfo.departure}</span>
+              </div>
+            )}
+            {race.raceInfo?.arrival && (
+              <div className="flex justify-between">
+                <span className="text-[#cac8aa]">Arrivo</span>
+                <span className="text-[#f8f8f5]">{race.raceInfo.arrival}</span>
+              </div>
+            )}
+            {race.raceInfo?.wonHow && (
+              <div className="flex justify-between">
+                <span className="text-[#cac8aa]">Vittoria</span>
+                <span className="text-[#f8f8f5]">{race.raceInfo.wonHow}</span>
+              </div>
+            )}
+            {race.raceInfo?.avgSpeed && (
+              <div className="flex justify-between">
+                <span className="text-[#cac8aa]">Velocità media</span>
+                <span className="text-[#f8f8f5]">{race.raceInfo.avgSpeed}</span>
+              </div>
+            )}
+            {race.raceInfo?.avgTemperature && (
+              <div className="flex justify-between">
+                <span className="text-[#cac8aa]">Temperatura</span>
+                <span className="text-[#f8f8f5]">{race.raceInfo.avgTemperature}</span>
               </div>
             )}
           </div>
@@ -211,8 +247,42 @@ export default async function RaceDetailPage({
           </Link>
         </TabsContent>
 
-        {/* Memories tab */}
-        <TabsContent value="memories">
+        {/* Startlist tab */}
+        <TabsContent value="startlist">
+          {hasStartlist ? (
+            <div className="divide-y divide-[#484831]">
+              {race.startlist!.map((entry, i) => (
+                <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                  {entry.riderNumber != null && (
+                    <span className="text-[#cac8aa] tech-label w-6 text-right shrink-0">
+                      {entry.riderNumber}
+                    </span>
+                  )}
+                  {entry.nationality && (
+                    <span className={`fi fi-${entry.nationality.toLowerCase()} shrink-0`} />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[#f8f8f5] text-sm font-medium">
+                      {entry.riderName}
+                    </span>
+                    {entry.teamName && (
+                      <span className="block text-[#cac8aa] text-xs truncate">
+                        {entry.teamName}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-[#cac8aa]">
+              <p>Startlist non ancora disponibile.</p>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Memorie tab */}
+        <TabsContent value="memorie">
           {memories.length === 0 ? (
             <div className="text-center py-12 text-[#cac8aa]">
               <p>Nessun ricordo per questa gara.</p>
@@ -280,27 +350,56 @@ export default async function RaceDetailPage({
           )}
         </TabsContent>
 
-        {/* Watchlist tab */}
-        <TabsContent value="watchlist">
-          {jwt ? (
-            <WatchlistToggle
-              raceUrl={raceUrl}
-              raceName={race.name}
-              raceDate={race.startDate}
-              initialItemId={watchlistItem?.id ?? null}
-            />
-          ) : (
-            <div className="text-center py-12 text-[#cac8aa]">
-              <p>Accedi per gestire la tua watchlist.</p>
-              <Link
-                href="/login"
-                className="text-[#ffff00] hover:underline text-sm mt-2 inline-block"
-              >
-                Vai al login
-              </Link>
+        {/* Risultati tab — stage races or one-day races */}
+        {hasResults && (
+          <TabsContent value="risultati">
+            <div className="divide-y divide-[#484831]">
+              {race.stagesWinners && race.stagesWinners.length > 0
+                ? race.stagesWinners.map((w, i) => (
+                    <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                      {w.nationality && (
+                        <span className={`fi fi-${w.nationality.toLowerCase()} shrink-0`} />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[#f8f8f5] text-sm font-medium">
+                          {w.riderName}
+                        </span>
+                        <span className="block text-[#cac8aa] text-xs">
+                          {w.stageName}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                : race.raceResults!.map((r, i) => (
+                    <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                      {r.rank != null && (
+                        <span className="text-[#cac8aa] tech-label w-6 text-right shrink-0">
+                          {r.rank}
+                        </span>
+                      )}
+                      {r.nationality && (
+                        <span className={`fi fi-${r.nationality.toLowerCase()} shrink-0`} />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[#f8f8f5] text-sm font-medium">
+                          {r.riderName}
+                        </span>
+                        {r.teamName && (
+                          <span className="block text-[#cac8aa] text-xs truncate">
+                            {r.teamName}
+                          </span>
+                        )}
+                      </div>
+                      {r.time && (
+                        <span className="text-[#cac8aa] text-xs shrink-0 font-mono">
+                          {r.time}
+                        </span>
+                      )}
+                    </div>
+                  ))}
             </div>
-          )}
-        </TabsContent>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

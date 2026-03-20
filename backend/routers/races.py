@@ -116,6 +116,58 @@ def _detail_to_race_model(race_url: str, detail: RaceDetailModel) -> dict:
                 is_future = sd > today
         except Exception:
             pass
+    startlist = None
+    if detail.startlist:
+        startlist = [
+            {
+                "rider_name": e.rider_name,
+                "rider_url": e.rider_url,
+                "team_name": e.team_name,
+                "nationality": e.nationality,
+                "rider_number": e.rider_number,
+            }
+            for e in detail.startlist
+        ]
+
+    stages_winners = None
+    if detail.stages_winners:
+        stages_winners = [
+            {
+                "stage_name": w.stage_name,
+                "rider_name": w.rider_name,
+                "rider_url": w.rider_url,
+                "nationality": w.nationality,
+            }
+            for w in detail.stages_winners
+        ]
+
+    race_results = None
+    if detail.race_results:
+        race_results = [
+            {
+                "rank": r.rank,
+                "rider_name": r.rider_name,
+                "rider_url": r.rider_url,
+                "team_name": r.team_name,
+                "nationality": r.nationality,
+                "time": r.time,
+            }
+            for r in detail.race_results
+        ]
+
+    race_info = None
+    if detail.race_info:
+        ri = detail.race_info
+        race_info = {
+            "distance": ri.distance,
+            "departure": ri.departure,
+            "arrival": ri.arrival,
+            "won_how": ri.won_how,
+            "avg_temperature": ri.avg_temperature,
+            "start_time": ri.start_time,
+            "avg_speed": ri.avg_speed,
+        }
+
     return {
         "name": detail.name,
         "race_url": race_url,
@@ -128,6 +180,10 @@ def _detail_to_race_model(race_url: str, detail: RaceDetailModel) -> dict:
         "startlist_url": startlist_url,
         "is_future": is_future,
         "stages": None,
+        "startlist": startlist,
+        "stages_winners": stages_winners,
+        "race_results": race_results,
+        "race_info": race_info,
     }
 
 
@@ -159,6 +215,7 @@ async def get_race_detail(
                 pcs_race_url,
                 True,   # include_startlist
                 True,   # include_stages_winners
+                True,   # include_results
             )
             return _detail_to_race_model(pcs_race_url, detail)
         except Exception as e:

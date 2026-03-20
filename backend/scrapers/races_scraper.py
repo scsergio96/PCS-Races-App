@@ -39,6 +39,25 @@ class StartlistEntry(BaseModel):
     rider_number: Optional[int] = None
 
 
+class RaceResultEntry(BaseModel):
+    rank: Optional[int] = None
+    rider_name: str
+    rider_url: str
+    team_name: Optional[str] = None
+    nationality: Optional[str] = None
+    time: Optional[str] = None
+
+
+class RaceInfo(BaseModel):
+    distance: Optional[str] = None
+    departure: Optional[str] = None
+    arrival: Optional[str] = None
+    won_how: Optional[str] = None
+    avg_temperature: Optional[str] = None
+    start_time: Optional[str] = None
+    avg_speed: Optional[str] = None
+
+
 class RaceDetailModel(BaseModel):
     name: str
     year: int
@@ -52,6 +71,8 @@ class RaceDetailModel(BaseModel):
     stages: Optional[List[StageDetail]] = None          # solo gare a tappe
     stages_winners: Optional[List[StageWinner]] = None  # se include_stages_winners=true
     startlist: Optional[List[StartlistEntry]] = None    # se include_startlist=true
+    race_results: Optional[List[RaceResultEntry]] = None  # one-day race finishers
+    race_info: Optional[RaceInfo] = None                  # sidebar info (distance, etc.)
 
 
 # ---------------------------------------------------------------------------
@@ -209,10 +230,113 @@ def fetch_races(
     return all_races
 
 
+def fetch_race_result(race_url: str) -> tuple:
+    """Fetch finisher results and race info from the /result page.
+    Returns (list[RaceResultEntry], RaceInfo).
+    """
+    result_url = race_url.rstrip("/") + "/result"
+    try:
+        scraper = Scraper(result_url)
+        soup = BeautifulSoup(scraper.html.html, "html.parser")
+    except Exception as e:
+        print(f"[WARN] fetch_race_result failed for {race_url}: {e}")
+        return [], RaceInfo()
+
+    results: List[RaceResultEntry] = []
+    table = soup.find("table", class_="results")
+    if table:
+        tbody = table.find("tbody")
+        for tr in (tbody.find_all("tr") if tbody else []):
+            cells = tr.find_all("td")
+            if not cells:
+                continue
+
+            rank_text = cells[0].get_text(strip=True)
+            rank = int(rank_text) if rank_text.isdigit() else None
+
+            nationality = None
+            flag_span = tr.find("span", class_="flag")
+            if flag_span:
+                codes = [c for c in flag_span.get("class", []) if c != "flag"]
+                nationality = codes[0].upper() if codes else None
+
+            rider_name = ""
+            rider_url_val = ""
+            rider_link = None
+            for a in tr.find_all("a", href=True):
+                if a["href"].startswith("rider/"):
+                    rider_link = a
+                    break
+            if rider_link:
+                rider_url_val = rider_link["href"]
+                last_span = rider_link.find("span", class_="uppercase")
+                if last_span:
+                    last = last_span.get_text(strip=True)
+                    first = (last_span.next_sibling or "")
+                    first = str(first).strip()
+                    rider_name = f"{last} {first}".strip() if first else last
+                else:
+                    rider_name = rider_link.get_text(strip=True)
+
+            team_name = None
+            team_cell = tr.find("td", class_="cu600")
+            if team_cell:
+                team_link = team_cell.find("a")
+                if team_link:
+                    team_name = team_link.get_text(strip=True)
+
+            time_text = None
+            time_cell = tr.find("td", class_="time")
+            if time_cell:
+                font = time_cell.find("font")
+                if font:
+                    raw = font.get_text(strip=True)
+                    time_text = None if raw in (",,", "") else raw
+
+            if rider_name:
+                results.append(RaceResultEntry(
+                    rank=rank,
+                    rider_name=rider_name,
+                    rider_url=rider_url_val,
+                    nationality=nationality,
+                    team_name=team_name,
+                    time=time_text,
+                ))
+
+    # Race info sidebar
+    race_info = RaceInfo()
+    kv_list = soup.find("ul", class_="keyvalueList")
+    if kv_list:
+        for li in kv_list.find_all("li"):
+            title_el = li.find(class_="title")
+            value_el = li.find(class_="value")
+            if not title_el or not value_el:
+                continue
+            title = title_el.get_text(strip=True).lower()
+            value = value_el.get_text(strip=True)
+            if "distance" in title:
+                race_info.distance = value
+            elif "departure" in title:
+                race_info.departure = value
+            elif "arrival" in title:
+                race_info.arrival = value
+            elif "won how" in title:
+                race_info.won_how = value
+            elif "temperature" in title:
+                race_info.avg_temperature = value
+            elif "start time" in title:
+                race_info.start_time = value
+            elif "speed" in title:
+                race_info.avg_speed = value
+
+    return results, race_info
+
+
 def fetch_race_detail(
     race_url: str,
     include_startlist: bool = False,
     include_stages_winners: bool = False,
+    include_results: bool = False,
 ) -> RaceDetailModel:
     race = PCSRace(race_url)
 
@@ -279,12 +403,36 @@ def fetch_race_detail(
         except Exception as e:
             print(f"[WARN] startlist fetch failed for {race_url}: {e}")
 
+    # One-day race results (only for past one-day races)
+    race_results: Optional[List[RaceResultEntry]] = None
+    race_info: Optional[RaceInfo] = None
+    startdate = _safe(race.startdate)
+    year_val = _safe(race.year) or 0
+
+    # Determine is_future for this race
+    _is_future = False
+    if startdate:
+        try:
+            import re as _re
+            m = _re.match(r"(\d{2})\.(\d{2})", startdate)
+            if m and year_val >= date.today().year:
+                sd = date(year_val, int(m.group(2)), int(m.group(1)))
+                _is_future = sd > date.today()
+        except Exception:
+            pass
+
+    if include_results and is_one_day and not _is_future:
+        try:
+            race_results, race_info = fetch_race_result(race_url)
+        except Exception as e:
+            print(f"[WARN] race results fetch failed for {race_url}: {e}")
+
     return RaceDetailModel(
         name=_safe(race.name) or "",
-        year=_safe(race.year) or 0,
+        year=year_val,
         nationality=_safe(race.nationality),
         edition=_safe(race.edition),
-        startdate=_safe(race.startdate),
+        startdate=startdate,
         enddate=_safe(race.enddate),
         category=_safe(race.category),
         uci_tour=_safe(race.uci_tour),
@@ -292,4 +440,6 @@ def fetch_race_detail(
         stages=stages,
         stages_winners=stages_winners,
         startlist=startlist,
+        race_results=race_results,
+        race_info=race_info,
     )

@@ -1,4 +1,38 @@
 // ── Race types ──────────────────────────────────────────────────────────────
+export interface StartlistEntry {
+  riderName: string;
+  riderUrl: string;
+  teamName: string | null;
+  nationality: string | null;
+  riderNumber: number | null;
+}
+
+export interface StageWinner {
+  stageName: string;
+  riderName: string;
+  riderUrl: string;
+  nationality: string | null;
+}
+
+export interface RaceResultEntry {
+  rank: number | null;
+  riderName: string;
+  riderUrl: string;
+  teamName: string | null;
+  nationality: string | null;
+  time: string | null;
+}
+
+export interface RaceInfo {
+  distance: string | null;
+  departure: string | null;
+  arrival: string | null;
+  wonHow: string | null;
+  avgTemperature: string | null;
+  startTime: string | null;
+  avgSpeed: string | null;
+}
+
 export interface Race {
   name: string;
   raceUrl: string;
@@ -10,6 +44,10 @@ export interface Race {
   nation: string | null;
   startlistUrl: string | null;
   isFuture: boolean;
+  startlist?: StartlistEntry[] | null;
+  stagesWinners?: StageWinner[] | null;
+  raceResults?: RaceResultEntry[] | null;
+  raceInfo?: RaceInfo | null;
 }
 
 // ── Diary types ──────────────────────────────────────────────────────────────
