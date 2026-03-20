@@ -63,21 +63,21 @@ function CommentNode({
     <div
       className={cn(
         "space-y-2",
-        depth > 0 && "ml-4 border-l border-zinc-800 pl-3"
+        depth > 0 && "ml-4 border-l border-[#484831] pl-3"
       )}
     >
-      <div className="bg-zinc-900/60 rounded-lg p-3">
+      <div className="bg-[#202013] border border-[#484831] p-3">
         {comment.isRemoved ? (
-          <p className="text-zinc-600 text-xs italic">Commento rimosso</p>
+          <p className="text-[#cac8aa] text-xs italic">Commento rimosso</p>
         ) : (
           <>
-            <p className="text-sm text-zinc-300">{comment.body}</p>
-            <div className="flex gap-3 mt-2 text-xs text-zinc-600">
+            <p className="text-sm text-[#f8f8f5]">{comment.body}</p>
+            <div className="flex gap-3 mt-2 text-xs text-[#cac8aa]">
               <span>&#10084; {comment.likeCount}</span>
               {depth < 3 && (
                 <button
                   onClick={() => setReplying(!replying)}
-                  className="hover:text-zinc-400 transition-colors"
+                  className="hover:text-[#ffff00] transition-colors"
                 >
                   Rispondi
                 </button>
@@ -93,14 +93,14 @@ function CommentNode({
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
             placeholder="Scrivi una risposta..."
-            className="bg-zinc-900 border-zinc-700 text-sm min-h-[80px]"
+            className="bg-[#202013] border-[#484831] text-sm min-h-[80px]"
           />
           <div className="flex gap-2">
             <Button
               size="sm"
               onClick={handleReply}
               disabled={submitting}
-              className="bg-[#E91E8C] hover:bg-[#c4186f] text-white text-xs"
+              className="bg-[#ffff00] hover:bg-[#cdcd00] text-black text-xs"
             >
               Invia
             </Button>
@@ -108,7 +108,7 @@ function CommentNode({
               size="sm"
               variant="ghost"
               onClick={() => setReplying(false)}
-              className="text-zinc-400 text-xs"
+              className="text-[#cac8aa] text-xs"
             >
               Annulla
             </Button>
@@ -170,7 +170,7 @@ export function CommentThread({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
+      <h2 className="tech-label text-[#cac8aa]">
         Commenti ({comments.length})
       </h2>
 
@@ -179,13 +179,13 @@ export function CommentThread({
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Scrivi un commento..."
-          className="bg-zinc-900 border-zinc-700 text-sm min-h-[80px]"
+          className="bg-[#202013] border-[#484831] text-sm min-h-[80px]"
         />
         <Button
           size="sm"
           onClick={handleTopLevelComment}
           disabled={submitting}
-          className="bg-[#E91E8C] hover:bg-[#c4186f] text-white"
+          className="bg-[#ffff00] hover:bg-[#cdcd00] text-black"
         >
           {submitting ? "..." : "Commenta"}
         </Button>

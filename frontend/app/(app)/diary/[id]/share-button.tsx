@@ -21,8 +21,9 @@ export function ShareButton({ raceName, shareToken }: ShareButtonProps) {
 
   return (
     <button
+      type="button"
       onClick={handleShare}
-      className="flex items-center justify-center w-8 h-8 rounded-md border border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-600 transition-colors"
+      className="flex items-center justify-center w-8 h-8 border border-[#484831] text-[#cac8aa] hover:text-[#ffff00] hover:border-[#ffff00] transition-colors"
     >
       <Share2 className="w-4 h-4" />
     </button>

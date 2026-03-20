@@ -55,7 +55,7 @@ export default function SignupPage() {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             required
-            className="bg-zinc-900 border-zinc-700"
+            className="bg-[#202013] border-[#484831]"
           />
         </div>
         <div className="space-y-2">
@@ -67,7 +67,7 @@ export default function SignupPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="bg-zinc-900 border-zinc-700"
+            className="bg-[#202013] border-[#484831]"
           />
         </div>
         <div className="space-y-2">
@@ -80,16 +80,16 @@ export default function SignupPage() {
             onChange={(e) => setPassword(e.target.value)}
             minLength={8}
             required
-            className="bg-zinc-900 border-zinc-700"
+            className="bg-[#202013] border-[#484831]"
           />
         </div>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-[#cac8aa]">
           Registrandoti accetti i nostri termini di servizio.
         </p>
         <Button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#E91E8C] hover:bg-[#c4186f] text-white"
+          className="w-full bg-[#ffff00] text-black font-black hover:bg-[#cdcd00] transition-colors rounded-none"
         >
           {loading ? "Registrazione..." : "Crea account"}
         </Button>
@@ -97,24 +97,24 @@ export default function SignupPage() {
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-zinc-700" />
+          <span className="w-full border-t border-[#484831]" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-[#09090b] px-2 text-zinc-500">oppure</span>
+          <span className="bg-[#1a1a0a] px-2 text-[#cac8aa]">oppure</span>
         </div>
       </div>
 
       <Button
         type="button"
         onClick={handleGoogleLogin}
-        className="w-full border border-zinc-700 bg-transparent hover:bg-zinc-800 text-zinc-200"
+        className="w-full border border-[#484831] bg-transparent hover:bg-[#2b2b1d] text-[#f8f8f5]"
       >
         Continua con Google
       </Button>
 
-      <p className="text-center text-sm text-zinc-400">
+      <p className="text-center text-sm text-[#cac8aa]">
         Hai già un account?{" "}
-        <Link href="/login" className="text-[#E91E8C] hover:underline">
+        <Link href="/login" className="text-[#ffff00] hover:underline">
           Accedi
         </Link>
       </p>

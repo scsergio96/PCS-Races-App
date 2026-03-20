@@ -84,12 +84,13 @@ export function WatchlistToggle({
   return (
     <div className="flex flex-col items-center gap-4 py-8">
       <button
+        type="button"
         onClick={toggle}
         disabled={loading}
-        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-50 ${
+        className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors disabled:opacity-50 ${
           inWatchlist
-            ? "bg-[#E91E8C] text-white hover:bg-[#c4186f]"
-            : "bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
+            ? "border-2 border-[#ffff00] text-[#ffff00] hover:bg-[#ffff00]/10"
+            : "border border-[#484831] text-[#cac8aa] hover:border-[#ffff00]/50"
         }`}
       >
         {inWatchlist ? (
@@ -99,7 +100,7 @@ export function WatchlistToggle({
         )}
         {inWatchlist ? "In watchlist" : "Aggiungi alla watchlist"}
       </button>
-      <p className="text-zinc-500 text-sm text-center">
+      <p className="text-[#cac8aa] text-sm text-center">
         {inWatchlist
           ? "Riceverai un promemoria quando la gara si avvicina."
           : "Segui questa gara per non perderla."}
