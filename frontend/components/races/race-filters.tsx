@@ -42,30 +42,30 @@ const MONTH_LABELS: Record<string, string> = {
 
 // value = lowercase PCS code, label = flag + name
 const CYCLING_NATIONS = [
-  { value: "it", flag: "🇮🇹", name: "Italia" },
-  { value: "fr", flag: "🇫🇷", name: "Francia" },
-  { value: "es", flag: "🇪🇸", name: "Spagna" },
-  { value: "be", flag: "🇧🇪", name: "Belgio" },
-  { value: "nl", flag: "🇳🇱", name: "Paesi Bassi" },
-  { value: "de", flag: "🇩🇪", name: "Germania" },
-  { value: "ch", flag: "🇨🇭", name: "Svizzera" },
-  { value: "gb", flag: "🇬🇧", name: "Gran Bretagna" },
-  { value: "dk", flag: "🇩🇰", name: "Danimarca" },
-  { value: "no", flag: "🇳🇴", name: "Norvegia" },
-  { value: "se", flag: "🇸🇪", name: "Svezia" },
-  { value: "at", flag: "🇦🇹", name: "Austria" },
-  { value: "pt", flag: "🇵🇹", name: "Portogallo" },
-  { value: "pl", flag: "🇵🇱", name: "Polonia" },
-  { value: "si", flag: "🇸🇮", name: "Slovenia" },
-  { value: "au", flag: "🇦🇺", name: "Australia" },
-  { value: "co", flag: "🇨🇴", name: "Colombia" },
-  { value: "us", flag: "🇺🇸", name: "USA" },
-  { value: "ca", flag: "🇨🇦", name: "Canada" },
-  { value: "jp", flag: "🇯🇵", name: "Giappone" },
+  { value: "it", name: "Italia" },
+  { value: "fr", name: "Francia" },
+  { value: "es", name: "Spagna" },
+  { value: "be", name: "Belgio" },
+  { value: "nl", name: "Paesi Bassi" },
+  { value: "de", name: "Germania" },
+  { value: "ch", name: "Svizzera" },
+  { value: "gb", name: "Gran Bretagna" },
+  { value: "dk", name: "Danimarca" },
+  { value: "no", name: "Norvegia" },
+  { value: "se", name: "Svezia" },
+  { value: "at", name: "Austria" },
+  { value: "pt", name: "Portogallo" },
+  { value: "pl", name: "Polonia" },
+  { value: "si", name: "Slovenia" },
+  { value: "au", name: "Australia" },
+  { value: "co", name: "Colombia" },
+  { value: "us", name: "USA" },
+  { value: "ca", name: "Canada" },
+  { value: "jp", name: "Giappone" },
 ];
 
-const NATION_LABEL: Record<string, string> = Object.fromEntries(
-  CYCLING_NATIONS.map((n) => [n.value, `${n.flag} ${n.name}`])
+const NATION_NAME: Record<string, string> = Object.fromEntries(
+  CYCLING_NATIONS.map((n) => [n.value, n.name])
 );
 
 export function RaceFilters() {
@@ -195,14 +195,22 @@ export function RaceFilters() {
             <Select value={nationValue} onValueChange={(v) => { if (v) setParam("nation", v); }}>
               <SelectTrigger className="bg-[#1a1a0a] border-[#484831] text-[#f8f8f5] text-sm h-8 w-full">
                 <SelectValue>
-                  {nationValue === "all" ? "Tutte le nazioni" : NATION_LABEL[nationValue] ?? nationValue.toUpperCase()}
+                  {nationValue === "all" ? "Tutte le nazioni" : (
+                    <span className="flex items-center gap-1.5">
+                      <span className={`fi fi-${nationValue}`} />
+                      {NATION_NAME[nationValue] ?? nationValue.toUpperCase()}
+                    </span>
+                  )}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-[#202013] border-[#484831]">
                 <SelectItem value="all" className="text-[#f8f8f5]">Tutte le nazioni</SelectItem>
                 {CYCLING_NATIONS.map((n) => (
                   <SelectItem key={n.value} value={n.value} className="text-[#f8f8f5]">
-                    {n.flag} {n.name}
+                    <span className="flex items-center gap-1.5">
+                      <span className={`fi fi-${n.value}`} />
+                      {n.name}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>

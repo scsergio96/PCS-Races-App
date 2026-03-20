@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
+import "flag-icons/css/flag-icons.min.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
