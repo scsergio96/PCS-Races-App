@@ -4,6 +4,7 @@ from datetime import date
 from procyclingstats.scraper import Scraper
 from procyclingstats.race_scraper import Race as PCSRace
 from procyclingstats.race_startlist_scraper import RaceStartlist as PCSRaceStartlist
+from procyclingstats.stage_scraper import Stage as PCSStage
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 from typing import Optional, List
@@ -56,6 +57,29 @@ class RaceInfo(BaseModel):
     avg_temperature: Optional[str] = None
     start_time: Optional[str] = None
     avg_speed: Optional[str] = None
+
+
+class GCEntry(BaseModel):
+    rank: Optional[int] = None
+    rider_name: str
+    rider_url: str
+    nationality: Optional[str] = None
+    time: Optional[str] = None  # gap to leader, e.g. "+0:45"; "0:00:00" for the leader
+
+
+class StageFullDetail(BaseModel):
+    stage_name: str
+    stage_url: str
+    date: Optional[str] = None
+    distance: Optional[float] = None
+    departure: Optional[str] = None
+    arrival: Optional[str] = None
+    stage_type: Optional[str] = None   # "RR", "ITT", "TTT"
+    profile_icon: Optional[str] = None  # "p0"–"p5"
+    vertical_meters: Optional[int] = None
+    won_how: Optional[str] = None
+    results: List[RaceResultEntry] = []   # stage finishers (reuses existing class)
+    gc: List[GCEntry] = []                # GC standings; time = gap to leader
 
 
 class RaceDetailModel(BaseModel):
@@ -522,4 +546,63 @@ def fetch_race_detail(
         startlist=startlist,
         race_results=race_results,
         race_info=race_info,
+    )
+
+
+def fetch_stage_detail(stage_url: str) -> StageFullDetail:
+    """Fetch full detail for a single stage using procyclingstats.Stage."""
+    stage = PCSStage(stage_url)
+
+    def _safe(fn):
+        try:
+            return fn()
+        except Exception:
+            return None
+
+    # Results
+    results: List[RaceResultEntry] = []
+    try:
+        raw_results = stage.results("rank", "rider_name", "rider_url", "team_name", "nationality", "time")
+        for r in raw_results:
+            rank_val = r.get("rank")
+            results.append(RaceResultEntry(
+                rank=int(rank_val) if rank_val is not None else None,
+                rider_name=r.get("rider_name", ""),
+                rider_url=r.get("rider_url", ""),
+                team_name=r.get("team_name"),
+                nationality=r.get("nationality"),
+                time=r.get("time"),
+            ))
+    except Exception as e:
+        print(f"[WARN] fetch_stage_detail results failed for {stage_url}: {e}")
+
+    # GC standings
+    gc: List[GCEntry] = []
+    try:
+        raw_gc = stage.gc("rank", "rider_name", "rider_url", "nationality", "time")
+        for g in raw_gc:
+            rank_val = g.get("rank")
+            gc.append(GCEntry(
+                rank=int(rank_val) if rank_val is not None else None,
+                rider_name=g.get("rider_name", ""),
+                rider_url=g.get("rider_url", ""),
+                nationality=g.get("nationality"),
+                time=g.get("time"),
+            ))
+    except Exception as e:
+        print(f"[WARN] fetch_stage_detail gc failed for {stage_url}: {e}")
+
+    return StageFullDetail(
+        stage_name=_safe(stage.stage_type) or "",
+        stage_url=stage_url,
+        date=_safe(stage.date),
+        distance=_safe(stage.distance),
+        departure=_safe(stage.departure),
+        arrival=_safe(stage.arrival),
+        stage_type=_safe(stage.stage_type),
+        profile_icon=_safe(stage.profile_icon),
+        vertical_meters=_safe(stage.vertical_meters),
+        won_how=_safe(stage.won_how),
+        results=results,
+        gc=gc,
     )
