@@ -15,7 +15,7 @@ class ScrapeCache(Base):
     cache_key: Mapped[str] = mapped_column(String, primary_key=True)
     data_type: Mapped[str] = mapped_column(
         Enum(
-            "race_list", "race_detail", "startlist", "stages", "stage_winners",
+            "race_list", "race_detail", "startlist", "stages", "stage_winners", "stage_detail",
             name="scrape_data_type",
         ),
         nullable=False,

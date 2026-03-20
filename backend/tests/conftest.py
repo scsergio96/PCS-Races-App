@@ -10,6 +10,7 @@ from models.diary import DiaryEntry, Mention  # noqa: F401
 from models.community import ReviewComment, ReviewLike, CommunityReport  # noqa: F401
 from models.watchlist import Watchlist  # noqa: F401
 from models.calendar import CalendarFilter  # noqa: F401
+from models.cache import ScrapeCache  # noqa: F401
 
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
