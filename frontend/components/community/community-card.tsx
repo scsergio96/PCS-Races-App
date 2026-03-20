@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { StarRating } from "@/components/diary/star-rating";
+import { Heart, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { DiaryEntry } from "@/types/api";
 
@@ -13,6 +14,7 @@ interface CommunityCardProps {
 export function CommunityCard({ review }: CommunityCardProps) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(review.likeCount);
+  const bodyText = review.body.replace(/<[^>]+>/g, "");
 
   const handleLike = async () => {
     const nextLiked = !liked;
@@ -34,36 +36,54 @@ export function CommunityCard({ review }: CommunityCardProps) {
   };
 
   return (
-    <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-4 space-y-3">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="font-semibold text-sm text-zinc-50 truncate">
-            {review.raceName}
+    <div className="bg-[#202013] border border-[#484831] p-4 space-y-3">
+      {/* User row */}
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 bg-[#2b2b1d] border border-[#ffff00] flex items-center justify-center text-sm font-black text-[#ffff00]">
+          {review.authorName?.[0]?.toUpperCase() ?? "?"}
+        </div>
+        <div>
+          <p className="kinetic-italic text-sm text-[#f8f8f5]">
+            {review.authorName ?? "Utente"}
           </p>
-          <p className="text-xs text-zinc-500">{review.raceYear}</p>
+          <p className="tech-label text-[8px] text-[#cac8aa]">
+            {review.raceYear}
+          </p>
         </div>
         {review.rating !== null && (
-          <StarRating value={review.rating} readonly size="sm" />
+          <div className="ml-auto">
+            <StarRating value={review.rating} readonly size="sm" />
+          </div>
         )}
       </div>
 
-      <p className="text-zinc-300 text-sm line-clamp-3">
-        {review.body.replace(/<[^>]+>/g, "")}
-      </p>
+      {/* Race name */}
+      <h3 className="kinetic-italic text-lg text-[#ffff00] leading-tight">
+        {review.raceName}
+      </h3>
 
-      <div className="flex items-center gap-4 text-xs text-zinc-500">
+      {/* Excerpt */}
+      {bodyText && (
+        <p className="text-[#cac8aa] text-sm line-clamp-3 italic">
+          &ldquo;{bodyText}&rdquo;
+        </p>
+      )}
+
+      {/* Actions */}
+      <div className="flex items-center gap-4 pt-1">
         <button
+          type="button"
           onClick={handleLike}
-          className={`flex items-center gap-1 transition-colors ${
-            liked ? "text-[#E91E8C]" : "hover:text-zinc-300"
+          className={`flex items-center gap-1.5 text-xs transition-colors ${
+            liked ? "text-[#ffff00]" : "text-[#cac8aa] hover:text-[#f8f8f5]"
           }`}
         >
-          <span>{liked ? "❤" : "🤍"}</span>
-          <span>{likeCount}</span>
+          <Heart className={`w-3.5 h-3.5 ${liked ? "fill-[#ffff00]" : ""}`} />
+          <span className="tech-label">{likeCount}</span>
         </button>
-        <span className="flex items-center gap-1">
-          <span>💬</span>
-          <span>{review.commentCount}</span>
+        <span className="flex items-center gap-1.5 text-xs text-[#cac8aa]">
+          <MessageCircle className="w-3.5 h-3.5" />
+          <span className="tech-label">{review.commentCount}</span>
         </span>
       </div>
     </div>

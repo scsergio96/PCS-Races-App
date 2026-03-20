@@ -7,17 +7,21 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 type SortOption = "recent" | "popular" | "hot";
 
 async function fetchFeed(sort: SortOption): Promise<DiaryEntry[]> {
-  const res = await fetch(`${API_URL}/community/feed?sort=${sort}`, {
-    next: { revalidate: 60 },
-  });
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const res = await fetch(`${API_URL}/community/feed?sort=${sort}`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
 }
 
 const SORT_LABELS: Record<SortOption, string> = {
-  recent: "Recenti",
-  popular: "Popolari",
-  hot: "🔥 Hot",
+  recent: "RECENTI",
+  popular: "POPOLARI",
+  hot: "HOT",
 };
 
 export default async function CommunityPage({
@@ -30,19 +34,22 @@ export default async function CommunityPage({
   const reviews = await fetchFeed(sort);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 pt-6 pb-8">
-      <h1 className="text-xl font-bold text-zinc-50 mb-4">Community</h1>
+    <div className="max-w-2xl mx-auto pb-8">
+      {/* Header */}
+      <div className="glass-nav border-b-2 border-[#ffff00] px-4 py-4 sticky top-0 z-10">
+        <h1 className="kinetic-italic text-xl text-[#f8f8f5]">Community Feed</h1>
+      </div>
 
-      {/* Sort tabs */}
-      <div className="flex gap-2 mb-4 border-b border-zinc-800 pb-2">
+      {/* Sort chips */}
+      <div className="flex gap-2 p-4 bg-[#1c1c0f] overflow-x-auto">
         {(["recent", "popular", "hot"] as const).map((s) => (
           <Link
             key={s}
             href={`/community?sort=${s}`}
-            className={`text-sm px-3 py-1 rounded-full transition-colors ${
+            className={`flex h-8 shrink-0 items-center justify-center px-4 tech-label transition-colors ${
               sort === s
-                ? "bg-[#E91E8C]/20 text-[#E91E8C]"
-                : "text-zinc-500 hover:text-zinc-300"
+                ? "bg-[#ffff00] text-black"
+                : "bg-[#2b2b1d] border border-[#484831] text-[#f8f8f5] hover:bg-[#363527]"
             }`}
           >
             {SORT_LABELS[s]}
@@ -50,13 +57,14 @@ export default async function CommunityPage({
         ))}
       </div>
 
+      {/* Feed */}
       {reviews.length === 0 ? (
-        <div className="text-center py-16 text-zinc-500">
-          <p>Nessuna recensione pubblica ancora.</p>
-          <p className="text-xs mt-1">Sii il primo a condividere la tua!</p>
+        <div className="text-center py-16 px-4">
+          <p className="tech-label text-[#cac8aa]">Nessuna recensione pubblica ancora.</p>
+          <p className="text-xs mt-1 text-[#484831]">Sii il primo a condividere la tua!</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4 p-4">
           {reviews.map((review) => (
             <CommunityCard key={review.id} review={review} />
           ))}
