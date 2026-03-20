@@ -13,8 +13,8 @@ router = APIRouter()
 CURRENT_YEAR = date.today().year
 
 
-def _build_cache_key(year: int, gender: str | None, race_level: int | None, nation: str | None, page: int) -> str:
-    return f"race_list:{year}:{gender or ''}:{race_level or ''}:{nation or ''}:{page}"
+def _build_cache_key(year: int, category: int | None, race_level: int | None, nation: str | None, race_class: str | None, page: int) -> str:
+    return f"race_list:{year}:{category or ''}:{race_level or ''}:{nation or ''}:{race_class or ''}:{page}"
 
 
 def _get_ttl(year: int) -> timedelta:
@@ -36,9 +36,10 @@ async def get_races(
     year_to: int = Query(default=CURRENT_YEAR, ge=1900, le=CURRENT_YEAR + 1),
     only_future: Optional[bool] = Query(default=None),
     month: Optional[int] = Query(default=None, ge=1, le=12),
-    gender: Optional[str] = Query(default=None),
+    category: Optional[int] = Query(default=None),
     race_level: Optional[int] = Query(default=None, ge=1, le=4),
     nation: Optional[str] = Query(default=None),
+    race_class: Optional[str] = Query(default=None),
     max_pages_per_year: int = Query(default=3, ge=1, le=10),
     db: AsyncSession = Depends(get_db),
 ):
@@ -49,7 +50,7 @@ async def get_races(
     all_races = []
 
     for year in range(year_from, year_to + 1):
-        cache_key = _build_cache_key(year, gender, race_level, nation, 1)
+        cache_key = _build_cache_key(year, category, race_level, nation, race_class, 1)
         ttl = _get_ttl(year)
 
         async def _scrape(y=year):
@@ -59,9 +60,10 @@ async def get_races(
                 years=[y],
                 max_pages_per_year=max_pages_per_year,
                 month=month,
-                gender=gender,
+                category=category,
                 race_level=race_level,
                 nation=nation,
+                race_class=race_class,
             )
             return [r.model_dump() for r in races]
 
