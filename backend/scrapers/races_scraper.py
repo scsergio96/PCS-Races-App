@@ -10,8 +10,6 @@ from typing import Optional, List
 
 from models.race import RaceModel
 
-today = date.today()
-
 # Mapping gender → category PCS
 GENDER_TO_CATEGORY = {"ME": "1", "WE": "2"}
 
@@ -124,7 +122,7 @@ def _build_race_model(raw: dict, year: int) -> RaceModel:
     try:
         if len(start_str) == 5 and "." in start_str:
             d, m = int(start_str[:2]), int(start_str[3:])
-            is_future = date(year, m, d) > today
+            is_future = date(year, m, d) > date.today()
     except (ValueError, TypeError):
         pass
 

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { RaceCard } from "@/components/races/race-card";
+import { RaceListClient } from "@/components/races/race-list-client";
 import { RaceFilters } from "@/components/races/race-filters";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Race } from "@/types/api";
@@ -16,6 +16,8 @@ async function fetchRaces(
   const level = typeof levelParam === "string" ? levelParam : undefined;
   const genderParam = searchParams.gender;
   const gender = typeof genderParam === "string" ? genderParam : undefined;
+  const futureParam = searchParams.future;
+  const future = typeof futureParam === "string" ? futureParam : "true";
 
   const query = new URLSearchParams({
     year_from: year,
@@ -24,6 +26,8 @@ async function fetchRaces(
   });
   if (level && level !== "all") query.set("race_level", level);
   if (gender && gender !== "all") query.set("gender", gender);
+  if (future === "true") query.set("only_future", "true");
+  if (future === "false") query.set("only_future", "false");
 
   try {
     const res = await fetch(`${API_URL}/races?${query}`, {
@@ -46,7 +50,13 @@ export default async function RacesPage({
     typeof params.year === "string"
       ? params.year
       : String(new Date().getFullYear());
-  const races = await fetchRaces(params);
+  const rawRaces = await fetchRaces(params);
+  const seen = new Set<string>();
+  const races = rawRaces.filter((r) => {
+    if (seen.has(r.raceUrl)) return false;
+    seen.add(r.raceUrl);
+    return true;
+  });
 
   return (
     <div className="max-w-2xl mx-auto pb-8">
@@ -65,21 +75,7 @@ export default async function RacesPage({
         </Suspense>
       </div>
 
-      {/* Race list */}
-      {races.length === 0 ? (
-        <div className="text-center py-16 text-[#cac8aa]">
-          <p className="tech-label">Nessuna gara trovata.</p>
-          <p className="text-xs mt-1 text-[#484831]">
-            Prova a cambiare i filtri o controlla che il backend sia avviato.
-          </p>
-        </div>
-      ) : (
-        <div className="divide-y divide-[#484831]">
-          {races.map((race, i) => (
-            <RaceCard key={race.raceUrl} race={race} striped={i % 2 === 0} />
-          ))}
-        </div>
-      )}
+      <RaceListClient races={races} />
     </div>
   );
 }

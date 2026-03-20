@@ -75,6 +75,18 @@ async def get_races(
         )
         all_races.extend(data)
 
+    today = date.today()
+    for r in all_races:
+        start = r.get("start_date") or ""
+        year_val = r.get("year", CURRENT_YEAR)
+        r["is_future"] = False
+        try:
+            if len(start) == 5 and "." in start:
+                d, m = int(start[:2]), int(start[3:])
+                r["is_future"] = date(year_val, m, d) > today
+        except Exception:
+            pass
+
     if only_future is True:
         all_races = [r for r in all_races if r.get("is_future")]
     elif only_future is False:
@@ -122,12 +134,15 @@ async def get_race_detail(
     race_url: str,
     db: AsyncSession = Depends(get_db),
 ):
+    # race_url received URL-decoded as "race/tour-de-france/2026"
+    # (frontend sends encodeURIComponent of the full raceUrl)
+    pcs_race_url = race_url
     cache = CacheService(db)
-    cache_key = f"race_detail:{race_url}"
+    cache_key = f"race_detail:{pcs_race_url}"
 
     year = CURRENT_YEAR
     try:
-        year = int(race_url.rstrip("/").split("/")[-1])
+        year = int(pcs_race_url.rstrip("/").split("/")[-1])
     except (ValueError, IndexError):
         pass
 
@@ -139,18 +154,18 @@ async def get_race_detail(
             import asyncio
             detail = await asyncio.to_thread(
                 fetch_race_detail,
-                race_url=race_url,
+                race_url=pcs_race_url,
             )
-            return _detail_to_race_model(race_url, detail)
+            return _detail_to_race_model(pcs_race_url, detail)
         except Exception as e:
-            raise HTTPException(500, f"Error fetching race: {e}")
+            raise HTTPException(404, f"Race not found or not yet available: {e}")
 
     data = await cache.get(
         cache_key,
         scrape_fn=_scrape,
         ttl=ttl,
         data_type="race_detail",
-        source_url=f"pcs/{race_url}",
+        source_url=f"pcs/{pcs_race_url}",
         is_immutable=is_past,
     )
     return data
