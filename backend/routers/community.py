@@ -33,7 +33,7 @@ async def community_feed(
     else:  # hot — simplified score without time decay for SQLite compatibility
         order = "(like_count + comment_count * 2) DESC, created_at DESC"
 
-    where_clauses = ["is_public = 1"]  # SQLite uses 1/0 for booleans
+    where_clauses = ["is_public = true"]
     params: dict = {"limit": page_size, "offset": offset}
 
     if gender is not None:
@@ -62,7 +62,7 @@ async def race_community(
     result = await db.execute(
         text(f"""
             SELECT * FROM diary_entry
-            WHERE is_public = 1 AND race_url = :race_url
+            WHERE is_public = true AND race_url = :race_url
             ORDER BY {order}
         """),
         {"race_url": race_url},
