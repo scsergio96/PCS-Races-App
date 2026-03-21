@@ -18,6 +18,7 @@ from routers.mentions import router as mentions_router
 from tasks.scheduled import run_scheduled_refresh
 from services.cache import CacheService
 from models.database import async_session_factory
+import models.user  # noqa: F401 — registers user_profile table in SQLAlchemy metadata
 from scrapers.races_scraper import fetch_races
 
 _session = requests.Session()
