@@ -1,25 +1,38 @@
 from contextlib import asynccontextmanager
+from datetime import date
+import logging
+import os
+from pathlib import Path
+
+import requests
+from alembic import command
+from alembic.config import Config
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import date
-import os
-import requests
-
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from procyclingstats.scraper import Scraper
-from routers.community import router as community_router
-from routers.races import router as races_router
-from routers.diary import router as diary_router, share_router
-from routers.comments import router as comments_router
-from routers.memories import router as memories_router
-from routers.watchlist import router as watchlist_router
-from routers.calendar import router as calendar_router
-from routers.mentions import router as mentions_router
-from tasks.scheduled import run_scheduled_refresh
-from services.cache import CacheService
+
 from models.database import async_session_factory
 import models.user  # noqa: F401 — registers user_profile table in SQLAlchemy metadata
+from routers.calendar import router as calendar_router
+from routers.comments import router as comments_router
+from routers.community import router as community_router
+from routers.diary import router as diary_router, share_router
+from routers.mentions import router as mentions_router
+from routers.memories import router as memories_router
+from routers.races import router as races_router
+from routers.watchlist import router as watchlist_router
 from scrapers.races_scraper import fetch_races
+from services.cache import CacheService
+from tasks.scheduled import run_scheduled_refresh
+
+logger = logging.getLogger(__name__)
+
+
+def _run_migrations() -> None:
+    ini_path = Path(__file__).parent / "alembic.ini"
+    alembic_cfg = Config(str(ini_path))
+    command.upgrade(alembic_cfg, "head")
 
 _session = requests.Session()
 _session.headers.update({**Scraper.DEFAULT_HEADERS, "Accept-Encoding": "gzip, deflate"})
@@ -30,6 +43,14 @@ CURRENT_YEAR = date.today().year
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Run DB migrations on startup
+    try:
+        _run_migrations()
+        logger.info("Alembic migrations applied successfully")
+    except Exception:
+        logger.exception("Failed to run Alembic migrations")
+        raise
+
     # Startup: start scheduled PCS refresh
     interval_hours = int(os.getenv("PCS_REFRESH_INTERVAL_HOURS", "6"))
     scheduler = AsyncIOScheduler()
